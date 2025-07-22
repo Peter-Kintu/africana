@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teacher Dashboard - LearnFlow AI</title>
+    <style>
+        /* General Web Display Styles (already existing) */
+        body {
+            font-family: 'Inter', sans-serif;
+            margin: 20px;
+            background-color: #f4f7f6;
+            color: #333;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        h1, h2, h3 {
+            color: #4a5568;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .download-button-container {
+            text-align: right;
+            margin-bottom: 20px;
+        }
+        .download-button {
+            background-color: #4CAF50; /* Green */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            text-decoration: none; /* For anchor tag */
+            display: inline-block;
+        }
+        .download-button:hover {
+            background-color: #45a049;
+        }
+        .student-card {
+            background-color: #f7fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+        .student-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .student-header h3 {
+            margin: 0;
+            color: #2d3748;
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .student-meta {
+            font-size: 0.9em;
+            color: #718096;
+        }
+        .section-title {
+            color: #4a5568;
+            font-weight: bold;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            border-bottom: 1px dashed #e2e8f0;
+            padding-bottom: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+            font-size: 0.9em;
+        }
+        th, td {
+            border: 1px solid #e2e8f0;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #ebf4ff;
+            color: #2b6cb0;
+        }
+        tr:nth-child(even) {
+            background-color: #f8faff;
+        }
+        .no-data {
+            color: #a0aec0;
+            font-style: italic;
+        }
+        .correct { color: green; font-weight: bold; }
+        .incorrect { color: red; font-weight: bold; }
+        .feedback { font-style: italic; color: #5a67d8; }
+
+        /* PDF Specific Styles (using @media print) */
+        @media print {
+            body {
+                margin: 0; /* Remove body margin for print */
+                font-size: 10pt; /* Smaller base font for print */
+            }
+            .container {
+                box-shadow: none; /* Remove shadow for print */
+                border-radius: 0; /* Remove border-radius for print */
+                padding: 10mm; /* Use mm for print padding */
+                width: 100%; /* Ensure container takes full width */
+                max-width: none; /* Remove max-width constraint */
+            }
+            .download-button-container {
+                display: none; /* Hide the download button in PDF */
+            }
+            h1 {
+                font-size: 18pt;
+            }
+            h3 {
+                font-size: 14pt;
+            }
+            .section-title {
+                font-size: 12pt;
+                margin-top: 15mm; /* More space before sections */
+                margin-bottom: 5mm;
+            }
+            table {
+                table-layout: fixed; /* Crucial: Fix table layout */
+                width: 100%; /* Ensure table takes full width */
+                margin-bottom: 10mm;
+            }
+            th, td {
+                padding: 3mm 2mm; /* Adjust padding for print */
+                word-wrap: break-word; /* Allow long words to break */
+                overflow-wrap: break-word; /* Standard property for word wrapping */
+                font-size: 8pt; /* Smaller font for table cells */
+            }
+            /* Explicit column widths for Recent Quiz Attempts table */
+            table:nth-of-type(2) th:nth-child(1), /* Lesson */
+            table:nth-of-type(2) td:nth-child(1) { width: 15%; }
+            table:nth-of-type(2) th:nth-child(2), /* Question */
+            table:nth-of-type(2) td:nth-child(2) { width: 25%; } /* Increased for question */
+            table:nth-of-type(2) th:nth-child(3), /* Submitted Answer */
+            table:nth-of-type(2) td:nth-child(3) { width: 15%; }
+            table:nth-of-type(2) th:nth-child(4), /* Correct? */
+            table:nth-of-type(2) td:nth-child(4) { width: 8%; }
+            table:nth-of-type(2) th:nth-child(5), /* Score */
+            table:nth-of-type(2) td:nth-child(5) { width: 7%; }
+            table:nth-of-type(2) th:nth-child(6), /* Feedback */
+            table:nth-of-type(2) td:nth-child(6) { width: 20%; } /* Increased for feedback */
+            table:nth-of-type(2) th:nth-child(7), /* Timestamp */
+            table:nth-of-type(2) td:nth-child(7) { width: 10%; }
+
+            /* Explicit column widths for Overall Progress Summary table */
+            table:nth-of-type(1) th:nth-child(1), /* Lesson UUID */
+            table:nth-of-type(1) td:nth-child(1) { width: 30%; }
+            table:nth-of-type(1) th:nth-child(2), /* Status */
+            table:nth-of-type(1) td:nth-child(2) { width: 20%; }
+            table:nth-of-type(1) th:nth-child(3), /* Score Avg */
+            table:nth-of-type(1) td:nth-child(3) { width: 20%; }
+            table:nth-of-type(1) th:nth-child(4), /* Last Attempt Date */
+            table:nth-of-type(1) td:nth-child(4) { width: 30%; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Teacher Dashboard</h1>
+        <div class="download-button-container">
+            <a href="?format=pdf" class="download-button">Download as PDF</a>
+        </div>
+        <p>Report generated on: {{ current_date }}</p>
+
+        {% if students_data %}
+            {% for student in students_data %}
+                <div class="student-card">
+                    <div class="student-header">
+                        <h3>{{ student.username }} ({{ student.student_id_code }})</h3>
+                        <div class="student-meta">
+                            Grade: {{ student.grade_level|default:"N/A" }} | Class: {{ student.class_name|default:"N/A" }}
+                        </div>
+                    </div>
+
+                    <p><strong>Total Quizzes Completed:</strong> {{ student.total_quizzes_completed }}</p>
+                    <p><strong>Average Score:</strong> {{ student.average_score|floatformat:2 }}%</p>
+
+                    <div class="section-title">Overall Progress Summary (by Lesson)</div>
+                    {% if student.overall_progress_summary %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Lesson UUID</th>
+                                    <th>Status</th>
+                                    <th>Score Avg</th>
+                                    <th>Last Attempt Date</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lesson_uuid, data in student.overall_progress_summary.items %}
+                                <tr>
+                                    <td>{{ lesson_uuid|slice:":8" }}...</td>
+                                    <td>{{ data.status|default:"N/A" }}</td>
+                                    <td>{{ data.score_avg|default:"N/A" }}</td>
+                                    <td>{{ data.last_attempt_date|default:"N/A" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="no-data">No overall progress data available.</p>
+                    {% endif %}
+
+                    <div class="section-title">Recent Quiz Attempts</div>
+                    {% if student.recent_quiz_attempts %}
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Lesson</th>
+                                    <th>Question</th>
+                                    <th>Submitted Answer</th>
+                                    <th>Correct?</th>
+                                    <th>Score</th>
+                                    <th>Feedback</th>
+                                    <th>Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for attempt in student.recent_quiz_attempts %}
+                                <tr>
+                                    <td>{{ attempt.lesson_title }}</td>
+                                    <td>{{ attempt.question_text|slice:":50" }}...</td>
+                                    <td>{{ attempt.submitted_answer }}</td>
+                                    <td class="{% if attempt.is_correct %}correct{% else %}incorrect{% endif %}">
+                                        {% if attempt.is_correct %}Yes{% else %}No{% endif %}
+                                    </td>
+                                    <td>{{ attempt.score|floatformat:1 }}</td>
+                                    <td class="feedback">{{ attempt.ai_feedback_text|default:"-" }}</td>
+                                    <td>{{ attempt.attempt_timestamp|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p class="no-data">No recent quiz attempts found.</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No student data available to display.</p>
+        {% endif %}
+    </div>
+</body>
+</html>

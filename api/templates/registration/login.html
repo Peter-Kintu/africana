@@ -1,0 +1,12 @@
+{% extends "admin/login.html" %}
+{% load i18n static %}
+
+{% block title %}{% translate "Log in" %}{% endblock %}
+
+{% block branding %}
+<h1 id="site-name"><a href="{% url 'admin:index' %}">{% translate 'LearnFlow AI Admin' %}</a></h1>
+{% endblock %}
+
+{% block content %}
+{{ block.super }}
+{% endblock %}

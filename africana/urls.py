@@ -4,14 +4,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
-from rest_framework.authtoken import views as drf_authtoken_views # ADDED: Import the views module
+from rest_framework.authtoken import views as drf_authtoken_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/', include('api.urls')),  # Include your API app's URLs
-    path('api-token-auth/', drf_authtoken_views.obtain_auth_token, name='api_token_auth'), # CORRECTED: Direct view reference
+    path('api-token-auth/', drf_authtoken_views.obtain_auth_token, name='api_token_auth'),
+    # This line MUST be present for /accounts/login/ to work
+    path('accounts/', include('django.contrib.auth.urls')),
 ]
 
 # Serve media files during development
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+

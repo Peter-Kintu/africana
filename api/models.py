@@ -3,6 +3,13 @@
 from django.db import models
 from django.conf import settings # To link to Django's built-in User model
 import uuid # For unique IDs
+from django.utils import timezone
+
+# Fallback for JSONField if not using PostgreSQL (e.g., SQLite in development)
+try:
+    from django.db.models import JSONField
+except ImportError:
+    from django.contrib.postgres.fields import JSONField # This would require psycopg2
 
 # Choices for various fields
 GENDER_CHOICES = [
@@ -160,4 +167,14 @@ class StudentProgress(models.Model):
 
     def __str__(self):
         return f"Progress for {self.student.user.username}"
+
+# NEW MODEL: Wallet
+class Wallet(models.Model):
+    student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='wallet')
+    address = models.CharField(max_length=42, unique=True, help_text="Ethereum wallet address (0x...)")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Wallet for {self.student.user.username}: {self.address}"
 

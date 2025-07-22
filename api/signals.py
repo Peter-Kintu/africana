@@ -17,3 +17,4 @@ def create_auth_token(sender, instance, created, **kwargs): # RENAMED function
         Token.objects.create(user=instance)
 
         # REMOVED: Student.objects.create(user=instance) # Student creation moved to views.py
+
