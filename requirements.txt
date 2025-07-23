@@ -4,3 +4,4 @@ django-cors-headers>=4.0,<4.1
 gunicorn
 xhtml2pdf
 dj-database-url
+web3
