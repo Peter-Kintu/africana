@@ -7,6 +7,54 @@
 <h1 id="site-name"><a href="{% url 'admin:index' %}">{% translate 'LearnFlow AI Admin' %}</a></h1>
 {% endblock %}
 
+{# Add custom CSS to center the login form labels #}
+{% block extrahead %}
+    {{ block.super }} {# Keep any existing extrahead content #}
+    <style>
+        /* Target labels within the login form's form-row divs */
+        #login-form .form-row label {
+            display: block; /* Make the label take up full width */
+            text-align: center; /* Center the text within the label */
+            float: none; /* Remove any default floating */
+            width: 100%; /* Ensure it spans the full width of its container */
+            margin-bottom: 5px; /* Add a little space below the label */
+        }
+        /* Optionally, you might want to center the input fields themselves */
+        #login-form .form-row input[type="text"],
+        #login-form .form-row input[type="password"] {
+            display: block; /* Make inputs block-level */
+            margin: 0 auto; /* Center the input field horizontally */
+            width: calc(100% - 20px); /* Adjust width if needed, accounting for padding/border */
+            max-width: 250px; /* Limit max width for better appearance */
+        }
+        /* Center the submit button */
+        #login-form .submit-row input[type="submit"] {
+            display: block;
+            margin: 20px auto 0 auto; /* Center button below inputs */
+        }
+        /* Adjust the form container itself for better centering */
+        #content-related {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: calc(100vh - 150px); /* Adjust height to center vertically */
+        }
+        #content {
+            width: auto; /* Allow content to size based on its children */
+            max-width: 400px; /* Limit overall form width */
+            margin: 0 auto; /* Center content block */
+        }
+        .login-form {
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+    </style>
+{% endblock %}
+
 {% block content %}
-{{ block.super }}
+<div class="login-form">
+    {{ block.super }}
+</div>
 {% endblock %}
