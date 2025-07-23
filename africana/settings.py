@@ -2,15 +2,24 @@
 
 import os
 from pathlib import Path
-import json # ADDED: Import the json module
+import json
+import dj_database_url # ADDED: For parsing DATABASE_URL
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-@e^$b!q#^1234567890abcdefghijklmnopqrstuvwxyz' 
+# SECURITY WARNING: keep the secret key used in production secret!
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-@e^$b!q#^1234567890abcdefghijklmnopqrstuvwxyz') # Use environment variable for production
 
-DEBUG = True
+# SECURITY WARNING: don't run with debug turned on in production!
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True' # Read DEBUG from environment variable
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = [
+    'localhost',
+    '127.0.0.1',
+    'africana-ntgr.onrender.com', # Your Render backend URL
+    'learnflow-ai-f0702.web.app', # Your Firebase Hosting URL
+    # Add any other domains where your app might be accessed
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -55,11 +64,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'africana.wsgi.application'
 
+# Database configuration for production (PostgreSQL on Render)
+# Render automatically provides a DATABASE_URL environment variable
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-    }
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', # Default to SQLite for local dev
+        conn_max_age=600 # Optional: connection pool timeout
+    )
 }
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -86,6 +97,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles' # ADDED: For collecting static files in production
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -104,7 +116,7 @@ REST_FRAMEWORK = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = True # Consider narrowing this down in a real production app for security
 
 CORS_ALLOW_METHODS = [
     'DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT',
@@ -114,8 +126,8 @@ CORS_ALLOW_HEADERS = [
     'accept', 'accept-encoding', 'authorization', 'content-type', 'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with',
 ]
 
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
+CSRF_COOKIE_SECURE = True # Set to True for HTTPS
+SESSION_COOKIE_SECURE = True # Set to True for HTTPS
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
@@ -123,15 +135,17 @@ LOGIN_URL = '/accounts/login/'
 
 
 # --- BLOCKCHAIN CONFIGURATION ---
-# IMPORTANT: Replace these with your actual deployed contract details and node URL.
-# For a testnet like Sepolia, you'd get these from Infura/Alchemy and your deployment.
-# For local development, use Ganache (e.g., http://127.0.0.1:7545)
+# IMPORTANT: These should be set as environment variables on your Render service.
+# For local development, you can set them in a .env file or directly in your shell.
 
-BLOCKCHAIN_NODE_URL = 'http://127.0.0.1:7545' # Example for Ganache. For Sepolia: 'https://sepolia.infura.io/v3/YOUR_INFURA_PROJECT_ID'
-LEARNFLOW_TOKEN_CONTRACT_ADDRESS = '0xYourDeployedContractAddressHere' # Replace with your deployed ERC-20 contract address
+BLOCKCHAIN_NODE_URL = os.environ.get('BLOCKCHAIN_NODE_URL', 'http://127.0.0.1:7545') # Default to Ganache for local
+LEARNFLOW_TOKEN_CONTRACT_ADDRESS = os.environ.get('LEARNFLOW_TOKEN_CONTRACT_ADDRESS', '0xYourDeployedContractAddressHere') # Replace with your deployed ERC-20 contract address
+CONTRACT_OWNER_PRIVATE_KEY = os.environ.get('CONTRACT_OWNER_PRIVATE_KEY', '0xYourContractOwnerPrivateKeyHere') # Replace with actual private key
+
 # ABI (Application Binary Interface) of your ERC-20 contract.
-# This is a JSON array. Paste the entire ABI here.
-LEARNFLOW_TOKEN_ABI = json.loads('''
+# This is a JSON array. You'll get this from your Hardhat compilation output.
+# For production, consider storing this in a separate file and loading it, or as a string env var if small enough.
+LEARNFLOW_TOKEN_ABI = json.loads(os.environ.get('LEARNFLOW_TOKEN_ABI', '''
 [
     {
         "inputs": [],
@@ -479,9 +493,5 @@ LEARNFLOW_TOKEN_ABI = json.loads('''
         "type": "function"
     }
 ]
-''') # Replace with your actual contract ABI
+''')) # Default ABI for local dev, or load from env var
 
-# The private key of the wallet that owns the deployed token contract (and will perform minting).
-# NEVER hardcode this in production. Use environment variables.
-# For hackathon, you can get this from Ganache or your Metamask for a testnet account.
-CONTRACT_OWNER_PRIVATE_KEY = '0xYourContractOwnerPrivateKeyHere' # Replace with actual private key
