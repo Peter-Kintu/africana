@@ -4,57 +4,141 @@
 {% block title %}{% translate "Log in" %}{% endblock %}
 
 {% block branding %}
-<h1 id="site-name"><a href="{% url 'admin:index' %}">{% translate 'LearnFlow AI Admin' %}</a></h1>
+<h1 id="site-name" style="color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);"><a href="{% url 'admin:index' %}" style="color: #fff; text-decoration: none;">{% translate 'LearnFlow AI Admin' %}</a></h1>
 {% endblock %}
 
-{# Add custom CSS to center the login form labels #}
 {% block extrahead %}
-    {{ block.super }} {# Keep any existing extrahead content #}
+    {{ block.super }}
     <style>
-        /* Target labels within the login form's form-row divs */
-        #login-form .form-row label {
-            display: block; /* Make the label take up full width */
-            text-align: center; /* Center the text within the label */
-            float: none; /* Remove any default floating */
-            width: 100%; /* Ensure it spans the full width of its container */
-            margin-bottom: 5px; /* Add a little space below the label */
-        }
-        /* Optionally, you might want to center the input fields themselves */
-        #login-form .form-row input[type="text"],
-        #login-form .form-row input[type="password"] {
-            display: block; /* Make inputs block-level */
-            margin: 0 auto; /* Center the input field horizontally */
-            width: calc(100% - 20px); /* Adjust width if needed, accounting for padding/border */
-            max-width: 250px; /* Limit max width for better appearance */
-        }
-        /* Center the submit button */
-        #login-form .submit-row input[type="submit"] {
-            display: block;
-            margin: 20px auto 0 auto; /* Center button below inputs */
-        }
-        /* Adjust the form container itself for better centering */
-        #content-related {
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #4a0080 0%, #7b1fa2 100%); /* Deep purple gradient */
             display: flex;
             justify-content: center;
             align-items: center;
-            min-height: calc(100vh - 150px); /* Adjust height to center vertically */
-        }
-        #content {
-            width: auto; /* Allow content to size based on its children */
-            max-width: 400px; /* Limit overall form width */
-            margin: 0 auto; /* Center content block */
-        }
-        .login-form {
+            min-height: 100vh;
+            margin: 0;
             padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #container { /* Target the main container of Django admin */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 450px; /* Increased max-width */
+            margin: auto; /* Center container */
+        }
+
+        #header {
+            background: none; /* Remove default header background */
+            border-bottom: none; /* Remove default header border */
+            padding: 0;
+            margin-bottom: 30px; /* Space below title */
+        }
+
+        #site-name a {
+            font-size: 2.5em; /* Larger title */
+            font-weight: 700;
+            color: #fff;
+            text-decoration: none;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
+        }
+
+        #content {
+            background-color: #ffffff;
+            padding: 40px; /* Increased padding */
+            border-radius: 12px; /* More rounded corners */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2); /* Stronger, softer shadow */
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .login-form h1 { /* Target the "Log in" heading inside the form */
+            color: #4a0080; /* Deep purple */
+            font-size: 1.8em;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        #login-form .form-row label {
+            display: block;
+            text-align: left; /* Align labels left within the form */
+            float: none;
+            width: 100%;
+            margin-bottom: 8px; /* More space below label */
+            font-weight: 600; /* Bolder labels */
+            color: #333; /* Darker text */
+            font-size: 0.95em;
+        }
+
+        #login-form .form-row input[type="text"],
+        #login-form .form-row input[type="password"] {
+            display: block;
+            width: 100%; /* Full width within its container */
+            padding: 12px 15px; /* More padding */
+            border: 1px solid #ddd;
+            border-radius: 8px; /* Rounded input fields */
+            font-size: 1em;
+            color: #333;
+            box-sizing: border-box; /* Include padding in width */
+            margin-bottom: 20px; /* Space below inputs */
+        }
+
+        #login-form .form-row input[type="text"]:focus,
+        #login-form .form-row input[type="password"]:focus {
+            border-color: #7b1fa2; /* Purple focus border */
+            box-shadow: 0 0 0 3px rgba(123, 31, 162, 0.2); /* Subtle glow */
+            outline: none;
+        }
+
+        #login-form .submit-row input[type="submit"] {
+            display: block;
+            width: 100%;
+            padding: 15px 20px;
+            background-color: #7b1fa2; /* Purple button */
+            color: #fff;
+            border: none;
             border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            background-color: #fff;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 15px rgba(123, 31, 162, 0.4); /* Button shadow */
+        }
+
+        #login-form .submit-row input[type="submit"]:hover {
+            background-color: #6a1b9a; /* Darker purple on hover */
+            transform: translateY(-2px); /* Slight lift effect */
+            box-shadow: 0 6px 20px rgba(123, 31, 162, 0.5);
+        }
+
+        #login-form .errorlist {
+            color: #e53935; /* Red for errors */
+            font-size: 0.9em;
+            margin-bottom: 15px;
+            padding-left: 0;
+            list-style-type: none;
+        }
+        #login-form .errorlist li {
+            margin-bottom: 5px;
+        }
+
+        #content-related { /* Remove this block as body handles centering */
+            display: none;
+        }
+        #footer {
+            display: none; /* Hide default footer if Jazzmin is used */
         }
     </style>
 {% endblock %}
 
 {% block content %}
-<div class="login-form">
-    {{ block.super }}
-</div>
+{# The .login-form div is no longer needed as #content is styled directly #}
+{{ block.super }}
 {% endblock %}

@@ -4,167 +4,320 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Teacher Dashboard - LearnFlow AI</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* General Web Display Styles (already existing) */
+        /* General Web Display Styles */
         body {
             font-family: 'Inter', sans-serif;
-            margin: 20px;
-            background-color: #f4f7f6;
+            margin: 0;
+            padding: 30px 0; /* Add vertical padding to body */
+            background-color: #f0f2f5; /* Lighter, modern background */
             color: #333;
+            line-height: 1.6;
         }
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 30px; /* Increased padding */
             background-color: #fff;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px; /* Softer rounded corners */
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1); /* Softer, deeper shadow */
         }
-        h1, h2, h3 {
-            color: #4a5568;
-            border-bottom: 2px solid #edf2f7;
-            padding-bottom: 10px;
+        h1 {
+            color: #4a0080; /* Deep purple */
+            font-size: 2.5em; /* Larger main title */
+            text-align: center;
+            margin-bottom: 35px; /* More space below title */
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0; /* Lighter border */
+            font-weight: 700;
+        }
+        h2 {
+            color: #6a1b9a; /* Slightly lighter purple */
+            font-size: 1.8em;
+            margin-top: 40px; /* More space above student sections */
             margin-bottom: 20px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 8px;
+            font-weight: 600;
+        }
+        h3 {
+            color: #2d3748;
+            font-size: 1.3em;
+            margin-bottom: 15px;
+            font-weight: 600;
         }
         .download-button-container {
             text-align: right;
-            margin-bottom: 20px;
+            margin-bottom: 30px; /* More space above button */
         }
         .download-button {
-            background-color: #4CAF50; /* Green */
+            background-color: #28a745; /* Green for download */
             color: white;
-            padding: 10px 20px;
+            padding: 12px 25px; /* More padding */
             border: none;
-            border-radius: 5px;
+            border-radius: 8px; /* Rounded button */
             cursor: pointer;
-            font-size: 16px;
-            text-decoration: none; /* For anchor tag */
+            font-size: 1em;
+            font-weight: 600;
+            text-decoration: none;
             display: inline-block;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
         }
         .download-button:hover {
-            background-color: #45a049;
+            background-color: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(40, 167, 69, 0.4);
+        }
+        .report-meta {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 25px;
+            text-align: center;
         }
         .student-card {
-            background-color: #f7fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            background-color: #fdfdff; /* Very light background */
+            border: 1px solid #e8eaf6; /* Light border */
+            border-radius: 10px;
+            padding: 25px; /* More padding */
+            margin-bottom: 35px; /* More space between cards */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08); /* Stronger, softer shadow */
         }
         .student-header {
             display: flex;
+            flex-wrap: wrap; /* Allow wrapping on small screens */
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px dashed #e0e0e0;
         }
         .student-header h3 {
             margin: 0;
-            color: #2d3748;
-            border-bottom: none;
-            padding-bottom: 0;
+            color: #4a0080; /* Deep purple for student name */
+            font-size: 1.6em;
         }
         .student-meta {
-            font-size: 0.9em;
-            color: #718096;
+            font-size: 1em; /* Slightly larger */
+            color: #777;
+            margin-top: 5px; /* Space if wrapped */
+        }
+        .student-summary p {
+            margin: 8px 0; /* Adjust spacing */
+            font-size: 1.05em;
+            color: #555;
         }
         .section-title {
-            color: #4a5568;
-            font-weight: bold;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            border-bottom: 1px dashed #e2e8f0;
-            padding-bottom: 5px;
+            color: #6a1b9a; /* Purple for section titles */
+            font-weight: 700;
+            font-size: 1.2em;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 8px;
         }
         table {
             width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 15px;
+            border-collapse: separate; /* Use separate for rounded borders */
+            border-spacing: 0; /* Remove space between cells */
+            margin-bottom: 25px;
             font-size: 0.9em;
+            border-radius: 8px; /* Rounded table corners */
+            overflow: hidden; /* Hide overflow for rounded corners */
         }
         th, td {
-            border: 1px solid #e2e8f0;
-            padding: 8px 12px;
+            border: 1px solid #e8eaf6; /* Light border */
+            padding: 12px 15px; /* More padding */
             text-align: left;
         }
         th {
-            background-color: #ebf4ff;
-            color: #2b6cb0;
+            background-color: #e8eaf6; /* Light indigo header */
+            color: #4a0080; /* Deep purple text */
+            font-weight: 600;
+            text-transform: uppercase; /* Uppercase headers */
+            font-size: 0.95em;
         }
         tr:nth-child(even) {
-            background-color: #f8faff;
+            background-color: #fdfdff; /* Very light stripe */
+        }
+        tr:nth-child(odd) {
+            background-color: #ffffff;
         }
         .no-data {
             color: #a0aec0;
             font-style: italic;
+            padding: 15px;
+            text-align: center;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            margin-top: 15px;
         }
-        .correct { color: green; font-weight: bold; }
-        .incorrect { color: red; font-weight: bold; }
-        .feedback { font-style: italic; color: #5a67d8; }
+        .correct { color: #28a745; font-weight: bold; } /* Green */
+        .incorrect { color: #dc3545; font-weight: bold; } /* Red */
+        .feedback { font-style: italic; color: #007bff; /* Blue */ }
+
+        /* Responsive Adjustments */
+        @media (max-width: 768px) {
+            body {
+                padding: 15px 0;
+            }
+            .container {
+                padding: 15px;
+            }
+            h1 {
+                font-size: 2em;
+                margin-bottom: 25px;
+            }
+            h2 {
+                font-size: 1.5em;
+                margin-top: 30px;
+            }
+            .student-card {
+                padding: 15px;
+                margin-bottom: 25px;
+            }
+            .student-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .student-header h3 {
+                font-size: 1.4em;
+            }
+            .student-meta {
+                margin-top: 10px;
+            }
+            table, th, td {
+                display: block; /* Stack table elements */
+                width: 100%;
+                box-sizing: border-box;
+            }
+            thead {
+                display: none; /* Hide table headers on small screens */
+            }
+            tr {
+                margin-bottom: 15px;
+                border: 1px solid #e8eaf6;
+                border-radius: 8px;
+                overflow: hidden;
+            }
+            td {
+                border: none;
+                border-bottom: 1px solid #eee;
+                position: relative;
+                padding-left: 50%; /* Space for pseudo-element label */
+                text-align: right;
+            }
+            td:last-child {
+                border-bottom: none;
+            }
+            td::before { /* Add labels using pseudo-elements */
+                content: attr(data-label);
+                position: absolute;
+                left: 10px;
+                width: calc(50% - 20px);
+                padding-right: 10px;
+                white-space: nowrap;
+                text-align: left;
+                font-weight: 600;
+                color: #6a1b9a;
+            }
+        }
 
         /* PDF Specific Styles (using @media print) */
         @media print {
             body {
-                margin: 0; /* Remove body margin for print */
-                font-size: 10pt; /* Smaller base font for print */
+                margin: 0;
+                padding: 0;
+                font-size: 9pt; /* Smaller base font for print */
             }
             .container {
-                box-shadow: none; /* Remove shadow for print */
-                border-radius: 0; /* Remove border-radius for print */
-                padding: 10mm; /* Use mm for print padding */
-                width: 100%; /* Ensure container takes full width */
-                max-width: none; /* Remove max-width constraint */
+                box-shadow: none;
+                border-radius: 0;
+                padding: 15mm; /* Use mm for print padding */
+                width: 100%;
+                max-width: none;
             }
             .download-button-container {
                 display: none; /* Hide the download button in PDF */
             }
             h1 {
                 font-size: 18pt;
+                margin-bottom: 20px;
+                padding-bottom: 10px;
+                border-bottom: 1px solid #ccc;
+            }
+            h2 {
+                font-size: 14pt;
+                margin-top: 15mm;
+                margin-bottom: 10px;
+                border-bottom: 1px dashed #ddd;
+                padding-bottom: 5px;
             }
             h3 {
-                font-size: 14pt;
+                font-size: 12pt;
+                margin-bottom: 10px;
+            }
+            .report-meta {
+                font-size: 8pt;
+                margin-bottom: 15px;
+            }
+            .student-card {
+                box-shadow: none;
+                border: 1px solid #eee;
+                margin-bottom: 20px;
+                padding: 15px;
+            }
+            .student-header {
+                border-bottom: 1px solid #eee;
+                padding-bottom: 10px;
+                margin-bottom: 10px;
             }
             .section-title {
-                font-size: 12pt;
-                margin-top: 15mm; /* More space before sections */
-                margin-bottom: 5mm;
+                font-size: 10pt;
+                margin-top: 15px;
+                margin-bottom: 10px;
+                border-bottom: 1px solid #eee;
+                padding-bottom: 5px;
             }
             table {
                 table-layout: fixed; /* Crucial: Fix table layout */
-                width: 100%; /* Ensure table takes full width */
-                margin-bottom: 10mm;
+                width: 100%;
+                margin-bottom: 15px;
+                border-radius: 0;
+                overflow: visible;
             }
             th, td {
-                padding: 3mm 2mm; /* Adjust padding for print */
-                word-wrap: break-word; /* Allow long words to break */
-                overflow-wrap: break-word; /* Standard property for word wrapping */
-                font-size: 8pt; /* Smaller font for table cells */
+                padding: 3mm 2mm;
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                font-size: 7pt; /* Smaller font for table cells in PDF */
             }
-            /* Explicit column widths for Recent Quiz Attempts table */
-            table:nth-of-type(2) th:nth-child(1), /* Lesson */
-            table:nth-of-type(2) td:nth-child(1) { width: 15%; }
-            table:nth-of-type(2) th:nth-child(2), /* Question */
-            table:nth-of-type(2) td:nth-child(2) { width: 25%; } /* Increased for question */
-            table:nth-of-type(2) th:nth-child(3), /* Submitted Answer */
-            table:nth-of-type(2) td:nth-child(3) { width: 15%; }
-            table:nth-of-type(2) th:nth-child(4), /* Correct? */
-            table:nth-of-type(2) td:nth-child(4) { width: 8%; }
-            table:nth-of-type(2) th:nth-child(5), /* Score */
-            table:nth-of-type(2) td:nth-child(5) { width: 7%; }
-            table:nth-of-type(2) th:nth-child(6), /* Feedback */
-            table:nth-of-type(2) td:nth-child(6) { width: 20%; } /* Increased for feedback */
-            table:nth-of-type(2) th:nth-child(7), /* Timestamp */
-            table:nth-of-type(2) td:nth-child(7) { width: 10%; }
+            /* Explicit column widths for Recent Quiz Attempts table for PDF */
+            table:nth-of-type(2) th:nth-child(1),
+            table:nth-of-type(2) td:nth-child(1) { width: 12%; } /* Lesson */
+            table:nth-of-type(2) th:nth-child(2),
+            table:nth-of-type(2) td:nth-child(2) { width: 22%; } /* Question */
+            table:nth-of-type(2) th:nth-child(3),
+            table:nth-of-type(2) td:nth-child(3) { width: 13%; } /* Submitted Answer */
+            table:nth-of-type(2) th:nth-child(4),
+            table:nth-of-type(2) td:nth-child(4) { width: 7%; } /* Correct? */
+            table:nth-of-type(2) th:nth-child(5),
+            table:nth-of-type(2) td:nth-child(5) { width: 6%; } /* Score */
+            table:nth-of-type(2) th:nth-child(6),
+            table:nth-of-type(2) td:nth-child(6) { width: 25%; } /* Feedback */
+            table:nth-of-type(2) th:nth-child(7),
+            table:nth-of-type(2) td:nth-child(7) { width: 15%; } /* Timestamp */
 
-            /* Explicit column widths for Overall Progress Summary table */
-            table:nth-of-type(1) th:nth-child(1), /* Lesson UUID */
-            table:nth-of-type(1) td:nth-child(1) { width: 30%; }
-            table:nth-of-type(1) th:nth-child(2), /* Status */
-            table:nth-of-type(1) td:nth-child(2) { width: 20%; }
-            table:nth-of-type(1) th:nth-child(3), /* Score Avg */
-            table:nth-of-type(1) td:nth-child(3) { width: 20%; }
-            table:nth-of-type(1) th:nth-child(4), /* Last Attempt Date */
-            table:nth-of-type(1) td:nth-child(4) { width: 30%; }
+            /* Explicit column widths for Overall Progress Summary table for PDF */
+            table:nth-of-type(1) th:nth-child(1),
+            table:nth-of-type(1) td:nth-child(1) { width: 30%; } /* Lesson UUID */
+            table:nth-of-type(1) th:nth-child(2),
+            table:nth-of-type(1) td:nth-child(2) { width: 20%; } /* Status */
+            table:nth-of-type(1) th:nth-child(3),
+            table:nth-of-type(1) td:nth-child(3) { width: 20%; } /* Score Avg */
+            table:nth-of-type(1) th:nth-child(4),
+            table:nth-of-type(1) td:nth-child(4) { width: 30%; } /* Last Attempt Date */
         }
     </style>
 </head>
@@ -174,10 +327,10 @@
         <div class="download-button-container">
             <a href="?format=pdf" class="download-button">Download as PDF</a>
         </div>
-        <p>Report generated on: {{ current_date }}</p>
+        <p class="report-meta">Report generated on: {{ current_time|date:"F j, Y H:i" }}</p>
 
-        {% if students_data %}
-            {% for student in students_data %}
+        {% if students %} {# Changed from students_data to students based on views.py #}
+            {% for student in students %}
                 <div class="student-card">
                     <div class="student-header">
                         <h3>{{ student.username }} ({{ student.student_id_code }})</h3>
@@ -186,27 +339,38 @@
                         </div>
                     </div>
 
-                    <p><strong>Total Quizzes Completed:</strong> {{ student.total_quizzes_completed }}</p>
-                    <p><strong>Average Score:</strong> {{ student.average_score|floatformat:2 }}%</p>
+                    <div class="student-summary">
+                        <p><strong>Overall Average Score:</strong> {{ student.overall_avg_score|floatformat:2 }}%</p>
+                    </div>
 
                     <div class="section-title">Overall Progress Summary (by Lesson)</div>
-                    {% if student.overall_progress_summary %}
+                    {% if student.progress_data %} {# Changed from overall_progress_summary to progress_data #}
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Lesson UUID</th>
+                                    <th>Lesson Title (UUID)</th>
                                     <th>Status</th>
                                     <th>Score Avg</th>
-                                    <th>Last Attempt Date</th>
+                                    <th>Attempts</th>
+                                    <th>Last Attempt</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for lesson_uuid, data in student.overall_progress_summary.items %}
+                                {% for lesson_uuid, data in student.progress_data.items %}
                                 <tr>
-                                    <td>{{ lesson_uuid|slice:":8" }}...</td>
-                                    <td>{{ data.status|default:"N/A" }}</td>
-                                    <td>{{ data.score_avg|default:"N/A" }}</td>
-                                    <td>{{ data.last_attempt_date|default:"N/A" }}</td>
+                                    <td data-label="Lesson Title (UUID)">{{ data.lesson_title|default:"N/A" }} ({{ lesson_uuid|slice:":8" }}...)</td>
+                                    <td data-label="Status">
+                                        {% if data.status == 'completed' %}
+                                            <span class="correct">{{ data.status|capfirst }}</span>
+                                        {% elif data.status == 'in_progress' %}
+                                            <span class="feedback">{{ data.status|capfirst }}</span>
+                                        {% else %}
+                                            <span class="incorrect">{{ data.status|capfirst }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td data-label="Score Avg">{{ data.score_avg|floatformat:2 }}%</td>
+                                    <td data-label="Attempts">{{ data.attempt_count|default:"0" }}</td>
+                                    <td data-label="Last Attempt">{{ data.last_attempt_date|default:"N/A" }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -232,15 +396,15 @@
                             <tbody>
                                 {% for attempt in student.recent_quiz_attempts %}
                                 <tr>
-                                    <td>{{ attempt.lesson_title }}</td>
-                                    <td>{{ attempt.question_text|slice:":50" }}...</td>
-                                    <td>{{ attempt.submitted_answer }}</td>
-                                    <td class="{% if attempt.is_correct %}correct{% else %}incorrect{% endif %}">
+                                    <td data-label="Lesson">{{ attempt.lesson_title }}</td>
+                                    <td data-label="Question">{{ attempt.question_text|slice:":50" }}...</td>
+                                    <td data-label="Submitted Answer">{{ attempt.submitted_answer }}</td>
+                                    <td data-label="Correct?" class="{% if attempt.is_correct %}correct{% else %}incorrect{% endif %}">
                                         {% if attempt.is_correct %}Yes{% else %}No{% endif %}
                                     </td>
-                                    <td>{{ attempt.score|floatformat:1 }}</td>
-                                    <td class="feedback">{{ attempt.ai_feedback_text|default:"-" }}</td>
-                                    <td>{{ attempt.attempt_timestamp|date:"Y-m-d H:i" }}</td>
+                                    <td data-label="Score">{{ attempt.score|floatformat:1 }}</td>
+                                    <td data-label="Feedback" class="feedback">{{ attempt.ai_feedback_text|default:"-" }}</td>
+                                    <td data-label="Timestamp">{{ attempt.attempt_timestamp|date:"Y-m-d H:i" }}</td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -251,7 +415,7 @@
                 </div>
             {% endfor %}
         {% else %}
-            <p>No student data available to display.</p>
+            <p class="no-data">No student data available to display.</p>
         {% endif %}
     </div>
 </body>

@@ -22,7 +22,7 @@ ALLOWED_HOSTS = [
 ]
 
 INSTALLED_APPS = [
-    'jazzmin', # ADD THIS LINE - MUST BE AT THE VERY TOP
+    'jazzmin', 
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
