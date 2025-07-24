@@ -5,3 +5,4 @@ gunicorn
 xhtml2pdf
 dj-database-url
 web3
+django-jazzmin # ADD THIS LINE

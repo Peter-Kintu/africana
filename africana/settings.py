@@ -3,15 +3,15 @@
 import os
 from pathlib import Path
 import json
-import dj_database_url # ADDED: For parsing DATABASE_URL
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-@e^$b!q#^1234567890abcdefghijklmnopqrstuvwxyz') # Use environment variable for production
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-@e^$b!q#^1234567890abcdefghijklmnopqrstuvwxyz')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True' # Read DEBUG from environment variable
+DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -22,6 +22,7 @@ ALLOWED_HOSTS = [
 ]
 
 INSTALLED_APPS = [
+    'jazzmin', # ADD THIS LINE - MUST BE AT THE VERY TOP
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -64,12 +65,10 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'africana.wsgi.application'
 
-# Database configuration for production (PostgreSQL on Render)
-# Render automatically provides a DATABASE_URL environment variable
 DATABASES = {
     'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', # Default to SQLite for local dev
-        conn_max_age=600 # Optional: connection pool timeout
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600
     )
 }
 
@@ -97,7 +96,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # ADDED: For collecting static files in production
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -116,7 +115,7 @@ REST_FRAMEWORK = {
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
-CORS_ALLOW_ALL_ORIGINS = True # Consider narrowing this down in a real production app for security
+CORS_ALLOW_ALL_ORIGINS = True
 
 CORS_ALLOW_METHODS = [
     'DELETE', 'GET', 'OPTIONS', 'PATCH', 'POST', 'PUT',
@@ -126,8 +125,8 @@ CORS_ALLOW_HEADERS = [
     'accept', 'accept-encoding', 'authorization', 'content-type', 'dnt', 'origin', 'user-agent', 'x-csrftoken', 'x-requested-with',
 ]
 
-CSRF_COOKIE_SECURE = True # Set to True for HTTPS
-SESSION_COOKIE_SECURE = True # Set to True for HTTPS
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
@@ -135,16 +134,9 @@ LOGIN_URL = '/accounts/login/'
 
 
 # --- BLOCKCHAIN CONFIGURATION ---
-# IMPORTANT: These should be set as environment variables on your Render service.
-# For local development, you can set them in a .env file or directly in your shell.
-
-BLOCKCHAIN_NODE_URL = os.environ.get('BLOCKCHAIN_NODE_URL', 'http://127.0.0.1:7545') # Default to Ganache for local
-LEARNFLOW_TOKEN_CONTRACT_ADDRESS = os.environ.get('LEARNFLOW_TOKEN_CONTRACT_ADDRESS', '0xYourDeployedContractAddressHere') # Replace with your deployed ERC-20 contract address
-CONTRACT_OWNER_PRIVATE_KEY = os.environ.get('CONTRACT_OWNER_PRIVATE_KEY', '0xYourContractOwnerPrivateKeyHere') # Replace with actual private key
-
-# ABI (Application Binary Interface) of your ERC-20 contract.
-# This is a JSON array. You'll get this from your Hardhat compilation output.
-# For production, consider storing this in a separate file and loading it, or as a string env var if small enough.
+BLOCKCHAIN_NODE_URL = os.environ.get('BLOCKCHAIN_NODE_URL', 'http://127.0.0.1:7545')
+LEARNFLOW_TOKEN_CONTRACT_ADDRESS = os.environ.get('LEARNFLOW_TOKEN_CONTRACT_ADDRESS', '0xYourDeployedContractAddressHere')
+CONTRACT_OWNER_PRIVATE_KEY = os.environ.get('CONTRACT_OWNER_PRIVATE_KEY', '0xYourContractOwnerPrivateKeyHere')
 LEARNFLOW_TOKEN_ABI = json.loads(os.environ.get('LEARNFLOW_TOKEN_ABI', '''
 [
     {
@@ -493,5 +485,170 @@ LEARNFLOW_TOKEN_ABI = json.loads(os.environ.get('LEARNFLOW_TOKEN_ABI', '''
         "type": "function"
     }
 ]
-''')) # Default ABI for local dev, or load from env var
+'''))
 
+# Jazzmin settings
+JAZZMIN_SETTINGS = {
+    # title of the window (Will default to current_admin_site.site_title if absent or None)
+    "site_title": "LearnFlow AI Admin",
+
+    # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
+    "site_header": "LearnFlow AI",
+
+    # square logo to use for your site, must be a static file
+    "site_logo": "img/logo.png", # You would need to add a logo here
+
+    # Welcome text on the login screen
+    "welcome_sign": "Welcome to LearnFlow AI Admin Panel",
+
+    # Copyright on the footer
+    "copyright": "LearnFlow AI Ltd",
+
+    # The model admin to search from the search bar, search bar will not be displayed if the list is empty
+    "search_model": ["auth.User", "api.Student", "api.Lesson", "api.Question"],
+
+    # Field name on user model that contains name of the user for display
+    "user_avatar": None, # Can be 'avatar' if you have an avatar field on your User model
+
+    ############
+    # Top Menu #
+    ############
+
+    # Links to put along the top menu
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Support", "url": "https://github.com/your-repo/learnflow-ai/issues", "new_window": True},
+        {"model": "auth.User"},
+        {"app": "api"},
+    ],
+
+    #############
+    # User Menu #
+    #############
+
+    # Additional links to include in the user menu on the top right ("app" url names)
+    "usermenu_links": [
+        {"name": "My Profile", "url": "/admin/auth/user/", "icon": "fas fa-user", "permissions": ["auth.view_user"]},
+        {"name": "Change Password", "url": "admin:password_change"},
+        {"name": "Admin Docs", "url": "admin:index"},
+    ],
+
+    #############
+    # Side Menu #
+    #############
+
+    # Whether to display the side menu
+    "show_sidebar": True,
+
+    # Whether to aut expand the menu
+    "navigation_expanded": True,
+
+    # Hide these apps when generating the side menu
+    "hide_apps": [],
+
+    # Hide these models when generating the side menu
+    "hide_models": [],
+
+    # List of apps (and/or models) to display in the side menu in the "Administration" section.
+    # The order of the apps in this list will be the order in which they appear in the side menu.
+    "order_with_respect_to": ["auth", "api"],
+
+    # Custom icons for the side menu of specific models
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "api.Student": "fas fa-user-graduate",
+        "api.Lesson": "fas fa-book",
+        "api.Question": "fas fa-question-circle",
+        "api.QuizAttempt": "fas fa-clipboard-check",
+        "api.StudentProgress": "fas fa-chart-line",
+        "api.Wallet": "fas fa-wallet",
+    },
+    # Icons can be found here: https://fontawesome.com/icons?d=gallery&m=free
+    "default_icon_parents": "fas fa-chevron-circle-right", # Default for models without specific icon
+    "default_icon_children": "fas fa-circle", # Default for child models
+
+    #################
+    # Related Modal #
+    #################
+    "related_modal_active": False, # Set to True for a nicer related object modal
+
+    #############
+    # UI Tweaks #
+    #############
+    "show_ui_builder": False, # Set to True to enable UI builder for live customization
+
+    "changeform_format": "horizontal_tabs", # Options: "horizontal_tabs", "vertical_tabs", "single", "collapsible"
+    "changeform_format_overrides": {"auth.user": "vertical_tabs", "auth.group": "vertical_tabs"},
+
+    # UI themes
+    # Available themes:
+    # "primary", "secondary", "info", "warning", "danger", "success", "dark", "light"
+    "custom_css": None,
+    "custom_js": None,
+    "show_ui_builder": True, # Set to True temporarily to experiment with themes
+    "ui_builder_no_copy_paste": True, # Prevents copying the generated settings
+
+    "theme": "darkly", # A nice dark theme
+    "dark_mode_theme": "darkly", # Ensure dark mode also uses a good theme
+
+    # For custom themes, you can use:
+    # "theme": "custom",
+    # "custom_css": "css/my_custom_admin.css",
+    # "custom_js": "js/my_custom_admin.js",
+
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": False,
+    "sidebar_class": "sidebar-dark-primary", # Options: "sidebar-dark-primary", "sidebar-light-primary", etc.
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "darkly", # A nice dark theme
+    "dark_mode_theme": "darkly", # Ensure dark mode also uses a good theme
+    "button_classes": {
+        "primary": "btn-outline-primary",
+        "secondary": "btn-outline-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    }
+}
+
+JAZZMIN_UI_TWEAKS = {
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-dark",
+    "sidebar_class": "sidebar-dark-primary",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
+    "sidebar_nav_child_indent": True,
+    "sidebar_nav_compact_style": False,
+    "sidebar_nav_legacy_style": False,
+    "sidebar_nav_flat_style": False,
+    "theme": "darkly", # Consistent theme
+    "dark_mode_theme": "darkly", # Consistent dark mode theme
+    "button_classes": {
+        "primary": "btn-primary",
+        "secondary": "btn-secondary",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success"
+    },
+    "actions_button_classes": {
+        "outlook": "btn-danger",
+        "add": "btn-success",
+        "delete": "btn-danger",
+        "other": "btn-info"
+    }
+}
