@@ -1,8 +1,8 @@
-Django>=5.0,<5.1
-djangorestframework>=3.14,<3.15
-django-cors-headers>=4.0,<4.1
+Django==5.0.14
+djangorestframework==3.14.0
+django-cors-headers==4.0.0
 gunicorn
 xhtml2pdf
 dj-database-url
 web3
-django-jazzmin # ADD THIS LINE
+django-jazzmin 

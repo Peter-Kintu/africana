@@ -22,7 +22,7 @@ ALLOWED_HOSTS = [
 ]
 
 INSTALLED_APPS = [
-    'jazzmin', 
+    'jazzmin', # MUST BE AT THE VERY TOP
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -96,7 +96,7 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_ROOT = BASE_DIR / 'staticfiles' # THIS IS CRUCIAL FOR COLLECTSTATIC
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -489,71 +489,29 @@ LEARNFLOW_TOKEN_ABI = json.loads(os.environ.get('LEARNFLOW_TOKEN_ABI', '''
 
 # Jazzmin settings
 JAZZMIN_SETTINGS = {
-    # title of the window (Will default to current_admin_site.site_title if absent or None)
     "site_title": "LearnFlow AI Admin",
-
-    # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
     "site_header": "LearnFlow AI",
-
-    # square logo to use for your site, must be a static file
-    "site_logo": "img/logo.png", # You would need to add a logo here
-
-    # Welcome text on the login screen
+    "site_logo": "img/logo.png",
     "welcome_sign": "Welcome to LearnFlow AI Admin Panel",
-
-    # Copyright on the footer
     "copyright": "LearnFlow AI Ltd",
-
-    # The model admin to search from the search bar, search bar will not be displayed if the list is empty
     "search_model": ["auth.User", "api.Student", "api.Lesson", "api.Question"],
-
-    # Field name on user model that contains name of the user for display
-    "user_avatar": None, # Can be 'avatar' if you have an avatar field on your User model
-
-    ############
-    # Top Menu #
-    ############
-
-    # Links to put along the top menu
+    "user_avatar": None,
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
         {"name": "Support", "url": "https://github.com/your-repo/learnflow-ai/issues", "new_window": True},
         {"model": "auth.User"},
         {"app": "api"},
     ],
-
-    #############
-    # User Menu #
-    #############
-
-    # Additional links to include in the user menu on the top right ("app" url names)
     "usermenu_links": [
         {"name": "My Profile", "url": "/admin/auth/user/", "icon": "fas fa-user", "permissions": ["auth.view_user"]},
         {"name": "Change Password", "url": "admin:password_change"},
         {"name": "Admin Docs", "url": "admin:index"},
     ],
-
-    #############
-    # Side Menu #
-    #############
-
-    # Whether to display the side menu
     "show_sidebar": True,
-
-    # Whether to aut expand the menu
     "navigation_expanded": True,
-
-    # Hide these apps when generating the side menu
     "hide_apps": [],
-
-    # Hide these models when generating the side menu
     "hide_models": [],
-
-    # List of apps (and/or models) to display in the side menu in the "Administration" section.
-    # The order of the apps in this list will be the order in which they appear in the side menu.
     "order_with_respect_to": ["auth", "api"],
-
-    # Custom icons for the side menu of specific models
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
@@ -565,53 +523,27 @@ JAZZMIN_SETTINGS = {
         "api.StudentProgress": "fas fa-chart-line",
         "api.Wallet": "fas fa-wallet",
     },
-    # Icons can be found here: https://fontawesome.com/icons?d=gallery&m=free
-    "default_icon_parents": "fas fa-chevron-circle-right", # Default for models without specific icon
-    "default_icon_children": "fas fa-circle", # Default for child models
-
-    #################
-    # Related Modal #
-    #################
-    "related_modal_active": False, # Set to True for a nicer related object modal
-
-    #############
-    # UI Tweaks #
-    #############
-    "show_ui_builder": False, # Set to True to enable UI builder for live customization
-
-    "changeform_format": "horizontal_tabs", # Options: "horizontal_tabs", "vertical_tabs", "single", "collapsible"
-    "changeform_format_overrides": {"auth.user": "vertical_tabs", "auth.group": "vertical_tabs"},
-
-    # UI themes
-    # Available themes:
-    # "primary", "secondary", "info", "warning", "danger", "success", "dark", "light"
+    "default_icon_parents": "fas fa-chevron-circle-right",
+    "default_icon_children": "fas fa-circle",
+    "related_modal_active": False,
+    "show_ui_builder": False, # Set to True temporarily to experiment with themes
+    "ui_builder_no_copy_paste": True,
+    "theme": "darkly",
+    "dark_mode_theme": "darkly",
     "custom_css": None,
     "custom_js": None,
-    "show_ui_builder": True, # Set to True temporarily to experiment with themes
-    "ui_builder_no_copy_paste": True, # Prevents copying the generated settings
-
-    "theme": "darkly", # A nice dark theme
-    "dark_mode_theme": "darkly", # Ensure dark mode also uses a good theme
-
-    # For custom themes, you can use:
-    # "theme": "custom",
-    # "custom_css": "css/my_custom_admin.css",
-    # "custom_js": "js/my_custom_admin.js",
-
     "navbar_small_text": False,
     "footer_small_text": False,
     "body_small_text": False,
     "brand_small_text": False,
     "brand_colour": False,
-    "sidebar_class": "sidebar-dark-primary", # Options: "sidebar-dark-primary", "sidebar-light-primary", etc.
+    "sidebar_class": "sidebar-dark-primary",
     "sidebar_nav_small_text": False,
     "sidebar_disable_expand": False,
     "sidebar_nav_child_indent": True,
     "sidebar_nav_compact_style": False,
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": False,
-    "theme": "darkly", # A nice dark theme
-    "dark_mode_theme": "darkly", # Ensure dark mode also uses a good theme
     "button_classes": {
         "primary": "btn-outline-primary",
         "secondary": "btn-outline-secondary",
@@ -635,8 +567,8 @@ JAZZMIN_UI_TWEAKS = {
     "sidebar_nav_compact_style": False,
     "sidebar_nav_legacy_style": False,
     "sidebar_nav_flat_style": False,
-    "theme": "darkly", # Consistent theme
-    "dark_mode_theme": "darkly", # Consistent dark mode theme
+    "theme": "darkly",
+    "dark_mode_theme": "darkly",
     "button_classes": {
         "primary": "btn-primary",
         "secondary": "btn-secondary",
