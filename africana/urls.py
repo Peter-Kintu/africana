@@ -4,10 +4,10 @@ from django.views.generic import RedirectView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('your_app_name.urls')), # Assuming 'your_app_name' has API URLs
+    path('api/', include('africana.api.urls')), # Assuming 'africana.api' has API URLs
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'), # Assuming obtain_auth_token is imported
     path('accounts/', include('accounts.urls')), # Assuming 'accounts' has its own URLs
-    path('teacher-dashboard/', your_app_name.views.teacher_dashboard, name='teacher-dashboard'), # Assuming this is a view
+    path('teacher-dashboard/', africana.views.teacher_dashboard, name='teacher-dashboard'), # Assuming this is a view
     path('media/<path:path>/', serve, {'document_root': settings.MEDIA_ROOT}), # Assuming serve and settings are imported
     path('static/<path:path>/', serve, {'document_root': settings.STATIC_ROOT}), # Assuming serve and settings are imported
 
