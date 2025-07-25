@@ -40,7 +40,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware', # MUST BE IMMEDIATELY AFTER SecurityMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsHeaderMiddleware', # Typo fix: HeaderMiddleware
+    'corsheaders.middleware.CorsHeaderMiddleware', # Corrected: CorsHeaderMiddleware
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -100,8 +100,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles' # Files collected here
 
-# WhiteNoise configuration for static files
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# WhiteNoise configuration for static files - SIMPLIFIED
+STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
