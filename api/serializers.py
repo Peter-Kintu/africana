@@ -39,8 +39,7 @@ class LessonSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class QuestionSerializer(serializers.ModelSerializer):
-    # This field will fetch the 'uuid' attribute from the related 'lesson' object
-    # It will appear in the API response as 'lesson_uuid'
+    # THIS IS THE CRUCIAL LINE: It tells Django to include the UUID of the related lesson.
     lesson_uuid = serializers.CharField(source='lesson.uuid', read_only=True)
 
     class Meta:
@@ -50,11 +49,10 @@ class QuestionSerializer(serializers.ModelSerializer):
             'options', 'correct_answer_text', 'difficulty_level',
             'expected_time_seconds', 'ai_generated_feedback', 'created_at'
         )
-        # Optionally, you can make 'lesson' (the integer ID) write-only
-        # if you only want to use 'lesson_uuid' for display/reading.
-        # 'lesson' is required for creating/updating a Question to link it to a Lesson.
+        # Make 'lesson' (the integer ID) write-only so it's not included in read responses
+        # but can still be used for creating/updating questions.
         extra_kwargs = {
-            'lesson': {'write_only': True, 'required': False} # Make lesson ID write-only, and not strictly required for read operations
+            'lesson': {'write_only': True, 'required': False}
         }
 
 
