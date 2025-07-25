@@ -11,7 +11,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-@e^$b!q#^1234567890abcdefghijklmnopqrstuvwxyz')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
+# IMPORTANT: DEBUG should be False in production environments like Render
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True' # Default to False for production
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -37,8 +38,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', # MUST BE IMMEDIATELY AFTER SecurityMiddleware
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsHeaderMiddleware', # Typo fix: HeaderMiddleware
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -63,7 +65,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'africana.wsgi.application'
+WSGI_APPLICATION = 'africana.wsgi.application' # This points to the wsgi.py file
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -96,7 +98,11 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # THIS IS CRUCIAL FOR COLLECTSTATIC
+STATIC_ROOT = BASE_DIR / 'staticfiles' # Files collected here
+
+# WhiteNoise configuration for static files
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -491,7 +497,7 @@ LEARNFLOW_TOKEN_ABI = json.loads(os.environ.get('LEARNFLOW_TOKEN_ABI', '''
 JAZZMIN_SETTINGS = {
     "site_title": "LearnFlow AI Admin",
     "site_header": "LearnFlow AI",
-    "site_logo": "img/logo.png",
+    "site_logo": "img/logo.png", # Make sure this path is correct if you have a custom logo
     "welcome_sign": "Welcome to LearnFlow AI Admin Panel",
     "copyright": "LearnFlow AI Ltd",
     "search_model": ["auth.User", "api.Student", "api.Lesson", "api.Question"],
