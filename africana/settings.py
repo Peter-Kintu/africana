@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
-    'django.contrib.staticfiles',
+    'django.contrib.staticfiles', # Ensure this is present
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
@@ -38,9 +38,9 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware', # MUST BE IMMEDIATELY AFTER SecurityMiddleware
+    # 'whitenoise.middleware.WhiteNoiseMiddleware', # Removed as we're using static() in urls.py
     'django.contrib.sessions.middleware.SessionMiddleware',
-    'corsheaders.middleware.CorsHeaderMiddleware', # Corrected: CorsHeaderMiddleware
+    'corsheaders.middleware.CorsMiddleware', # CORRECTED THIS LINE: Was CorsHeaderMiddleware
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
@@ -65,7 +65,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'africana.wsgi.application' # This points to the wsgi.py file
+WSGI_APPLICATION = 'africana.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
@@ -100,8 +100,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles' # Files collected here
 
-# WhiteNoise configuration for static files - SIMPLIFIED
-STATICFILES_STORAGE = 'whitenoise.storage.StaticFilesStorage'
+# STATICFILES_STORAGE is not strictly necessary with the urls.py approach, but keep it for collectstatic
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage' # Removed
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
