@@ -57,7 +57,7 @@ class Student(models.Model):
 
 class Lesson(models.Model):
     # This represents a 'module' or a 'lesson pack' that can be downloaded
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True, db_index=True)
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     subject = models.CharField(max_length=100, blank=True, null=True,
@@ -94,7 +94,11 @@ class Question(models.Model):
     difficulty_level = models.CharField(max_length=50, choices=DIFFICULTY_CHOICES, default='Medium')
     expected_time_seconds = models.IntegerField(blank=True, null=True,
                                                 help_text="Estimated time a student should take to answer (in seconds).")
+    # NEW FIELD ADDED HERE: ai_generated_feedback
+    ai_generated_feedback = models.TextField(blank=True, null=True,
+                                             help_text="AI-generated general feedback/explanation for the question.")
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True) # Added updated_at for consistency
 
     class Meta:
         ordering = ['lesson', 'created_at'] # Order questions within a lesson
@@ -120,8 +124,8 @@ class QuizAttempt(models.Model):
     # Raw JSON response from AI model (for debugging/detailed analysis)
     raw_ai_response = models.JSONField(blank=True, null=True,
                                        help_text="Raw JSON output from the on-device AI model.")
-    attempt_timestamp = models.DateTimeField(auto_now_add=True,
-                                             help_text="Timestamp when the attempt was recorded on the device.")
+    attempt_timestamp = models.DateTimeField(default=timezone.now,
+                                            help_text="Timestamp when the attempt was made on the device.")
     # When this record was successfully synced to the server
     synced_at = models.DateTimeField(null=True, blank=True, db_index=True)
     # Status for offline sync management
@@ -177,4 +181,3 @@ class Wallet(models.Model):
 
     def __str__(self):
         return f"Wallet for {self.student.user.username}: {self.address}"
-
