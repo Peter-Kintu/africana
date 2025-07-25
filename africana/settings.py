@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-@e^$b!q#^1234567890abcdefghijklmnopqrstuvwxyz')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# IMPORTANT: DEBUG should be False in production environments like Render
+# TEMPORARY: Set to True to get traceback in browser, then revert to False!
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True' # Default to False for production
 
 ALLOWED_HOSTS = [
@@ -52,8 +52,8 @@ ROOT_URLCONF = 'africana.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [os.path.join(BASE_DIR, 'templates')],
-        'APP_DIRS': True,
+        'DIRS': [os.path.join(BASE_DIR, 'templates')], # Custom project-level templates
+        'APP_DIRS': True, # Crucial for finding templates within installed apps (admin, jazzmin, etc.)
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -98,7 +98,13 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # Files collected here
+STATIC_ROOT = BASE_DIR / 'staticfiles' # Files collected here by collectstatic
+
+# If you have static files within your apps that aren't in STATIC_ROOT (e.g., specific app static directories)
+# Django's staticfiles finder will look for them. This is usually not needed for Jazzmin/Admin.
+# STATICFILES_DIRS = [
+#     # os.path.join(BASE_DIR, 'static'), # Example: if you have a top-level 'static' folder
+# ]
 
 # IMPORTANT: WhiteNoise configuration for static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
@@ -136,8 +142,9 @@ SESSION_COOKIE_SECURE = True
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-LOGIN_URL = '/accounts/login/'
-
+# Correct LOGIN_URL to point to the admin login, which Jazzmin overrides
+LOGIN_URL = '/admin/login/'
+LOGIN_REDIRECT_URL = '/admin/' # After successful login, redirect to admin index
 
 # --- BLOCKCHAIN CONFIGURATION ---
 BLOCKCHAIN_NODE_URL = os.environ.get('BLOCKCHAIN_NODE_URL', 'http://127.0.0.1:7545')
