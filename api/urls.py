@@ -31,7 +31,7 @@ urlpatterns = [
     # NEW Blockchain/Wallet URLs
     path('wallets/balance/', get_wallet_balance, name='wallet-balance'), # Custom action for balance
 
-    # FIX: Explicitly add the path for the current user endpoint
+    # CRITICAL FIX: Explicitly add the path for the current user endpoint
     # This ensures /api/auth/user/ is directly accessible
     path('auth/user/', AuthViewSet.as_view({'get': 'get_current_user'}), name='auth-current-user'),
 ]

@@ -4,11 +4,11 @@ from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.authtoken.models import Token
+from rest_framework.response import Response
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404, render
 from django.db import IntegrityError, transaction
-from rest_framework.response import Response
 import csv
 from django.http import HttpResponse
 from django.utils import timezone
@@ -27,7 +27,7 @@ from django.conf import settings # To access settings variables like BLOCKCHAIN_
 from web3.exceptions import Web3Exception # Import specific Web3 exceptions
 
 # Import the serializers module itself
-import rest_framework.serializers as serializers # <--- ADDED THIS LINE
+import rest_framework.serializers as serializers # <--- THIS WAS THE PREVIOUS FIX
 
 from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Wallet
 from .serializers import (
@@ -649,7 +649,7 @@ def ai_recommendations(request):
     except Student.DoesNotExist:
         return Response({'error': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
-        return Response({'error': f'AI recommendation generation failed: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        return Response({'error': f'An unexpected error occurred: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
 # --- AI Helper Functions (These are the actual logic, called by the API views above) ---
