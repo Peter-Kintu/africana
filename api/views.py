@@ -27,7 +27,7 @@ from django.conf import settings # To access settings variables like BLOCKCHAIN_
 from web3.exceptions import Web3Exception # Import specific Web3 exceptions
 
 # Import the serializers module itself
-import rest_framework.serializers as serializers # <--- THIS WAS THE PREVIOUS FIX
+import rest_framework.serializers as serializers
 
 from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Wallet
 from .serializers import (
@@ -166,6 +166,8 @@ class AuthViewSet(viewsets.ViewSet):
     def register(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
+            # DEBUG LOGGING: Print validated data to see what Django receives
+            print(f"AuthViewSet: Registering user with validated data: {serializer.validated_data}")
             try:
                 with transaction.atomic():
                     user = serializer.save()
@@ -196,10 +198,12 @@ class AuthViewSet(viewsets.ViewSet):
                 return Response({'token': token.key, 'user_id': user.id, 'username': user.username}, status=status.HTTP_201_CREATED)
             except IntegrityError as e:
                 # Catch unique constraint errors, e.g., duplicate student_id_code
+                print(f"AuthViewSet: IntegrityError during registration: {e}") # Log the specific error
                 return Response({'error': 'Registration failed: A user or student with this information already exists.'}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
-                print(f"Error during registration: {e}")
+                print(f"AuthViewSet: Unexpected error during registration: {e}") # Log unexpected errors
                 return Response({'error': 'Registration failed. Please try again.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        print(f"AuthViewSet: Serializer errors during registration: {serializer.errors}") # Log serializer errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     @action(detail=False, methods=['post'])
