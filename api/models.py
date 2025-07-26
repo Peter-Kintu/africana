@@ -39,7 +39,8 @@ class Student(models.Model):
     # Link to Django's built-in User model for authentication and basic user info
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
     # A unique code for the student, e.g., generated in-app or by teacher for easy identification
-    student_id_code = models.CharField(max_length=50, unique=True, blank=True, null=True,
+    # REMOVED unique=True to allow multiple null/blank student_id_code values for optionality
+    student_id_code = models.CharField(max_length=50, blank=True, null=True,
                                        help_text="A unique code for the student, e.g., generated in-app or by teacher.")
     date_registered = models.DateTimeField(auto_now_add=True)
     date_of_birth = models.DateField(blank=True, null=True)
@@ -104,7 +105,7 @@ class Question(models.Model):
         ordering = ['lesson', 'created_at'] # Order questions within a lesson
 
     def __str__(self):
-        return f"Q: {self.question_text[:50]}... ({self.lesson.title})"
+        return f"Q: {self.question_text[:50]}... (Lesson: {self.lesson.title})"
 
 class QuizAttempt(models.Model):
     # Records a student's attempt at a question
