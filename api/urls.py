@@ -29,9 +29,9 @@ urlpatterns = [
     path('ai/quiz-feedback/', ai_quiz_feedback, name='ai-quiz-feedback'),
     path('ai/recommendations/', ai_recommendations, name='ai-recommendations'),
     # NEW Blockchain/Wallet URLs
-    path('wallets/balance/', get_wallet_balance, name='wallet-balance'), # Custom action for balance
+    # THIS IS THE LINE FOR WALLET BALANCE - ENSURE IT'S PRESENT AND CORRECT
+    path('wallets/balance/', get_wallet_balance, name='wallet-balance'),
 
-    # CRITICAL FIX: Explicitly add the path for the current user endpoint
-    # This ensures /api/auth/user/ is directly accessible
+    # Explicitly add the path for the current user endpoint
     path('auth/user/', AuthViewSet.as_view({'get': 'get_current_user'}), name='auth-current-user'),
 ]
