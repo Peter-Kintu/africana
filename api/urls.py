@@ -7,7 +7,7 @@ from .views import (
     QuizAttemptViewSet, StudentProgressViewSet,
     export_quiz_attempts_csv,
     teacher_dashboard_view,
-    ai_quiz_feedback, ai_recommendations, # AI views
+    ai_quiz_feedback, ai_recommendations, # AI views - These are correctly named
     WalletViewSet, # NEW: Wallet ViewSet
     get_wallet_balance # NEW: Specific wallet balance endpoint
 )

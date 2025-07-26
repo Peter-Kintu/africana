@@ -1,21 +1,18 @@
 # learnflow_ai/django_backend/api/views.py
 
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, generics
 from rest_framework.decorators import action, api_view, permission_classes
-from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
-from django.utils import timezone
-from django.db import transaction
-import uuid
-
+from django.shortcuts import get_object_or_404, render
+from django.db import IntegrityError, transaction
+from rest_framework.response import Response
 import csv
 from django.http import HttpResponse
-from django.shortcuts import render
-from django.contrib.auth.decorators import login_required
-from django.db.models import Avg, Count
+from django.utils import timezone
+from django.db.models import Avg, Prefetch
 
 from django.template.loader import get_template
 from io import BytesIO
@@ -29,11 +26,14 @@ from web3 import Web3
 from django.conf import settings # To access settings variables like BLOCKCHAIN_NODE_URL
 from web3.exceptions import Web3Exception # Import specific Web3 exceptions
 
-from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Wallet # ADDED Wallet model
+# Import the serializers module itself
+import rest_framework.serializers as serializers # <--- ADDED THIS LINE
+
+from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Wallet
 from .serializers import (
     StudentSerializer, LessonSerializer, QuestionSerializer,
     QuizAttemptSerializer, StudentProgressSerializer, UserSerializer,
-    WalletSerializer # ADDED WalletSerializer
+    WalletSerializer
 )
 
 # --- Blockchain Helper Functions ---
@@ -43,19 +43,33 @@ LEARNFLOW_TOKEN_CONTRACT = None
 CONTRACT_OWNER_ACCOUNT = None
 
 try:
-    w3 = Web3(Web3.HTTPProvider(settings.BLOCKCHAIN_NODE_URL))
-    if not w3.is_connected():
-        print("WARNING: Not connected to Ethereum node. Blockchain features will be disabled.")
-        w3 = None # Set to None if not connected
+    # Check if BLOCKCHAIN_NODE_URL is configured
+    if hasattr(settings, 'BLOCKCHAIN_NODE_URL') and settings.BLOCKCHAIN_NODE_URL:
+        w3 = Web3(Web3.HTTPProvider(settings.BLOCKCHAIN_NODE_URL))
+        if not w3.is_connected():
+            print("WARNING: Not connected to Ethereum node. Blockchain features will be disabled.")
+            w3 = None # Set to None if not connected
+        else:
+            print(f"Connected to Ethereum node: {settings.BLOCKCHAIN_NODE_URL}")
+            # Ensure ABI, contract address, and private key are configured
+            if hasattr(settings, 'LEARNFLOW_TOKEN_ABI') and settings.LEARNFLOW_TOKEN_ABI and \
+               hasattr(settings, 'LEARNFLOW_TOKEN_CONTRACT_ADDRESS') and settings.LEARNFLOW_TOKEN_CONTRACT_ADDRESS and \
+               hasattr(settings, 'CONTRACT_OWNER_PRIVATE_KEY') and settings.CONTRACT_OWNER_PRIVATE_KEY:
+
+                LEARNFLOW_TOKEN_CONTRACT = w3.eth.contract(
+                    address=settings.LEARNFLOW_TOKEN_CONTRACT_ADDRESS,
+                    abi=json.loads(settings.LEARNFLOW_TOKEN_ABI) # ABI is typically a JSON string
+                )
+                CONTRACT_OWNER_ACCOUNT = w3.eth.account.from_key(settings.CONTRACT_OWNER_PRIVATE_KEY)
+                print(f"Loaded LearnFlow Token Contract: {settings.LEARNFLOW_TOKEN_CONTRACT_ADDRESS}")
+                print(f"Contract Owner Account: {CONTRACT_OWNER_ACCOUNT.address}")
+            else:
+                print("WARNING: Blockchain contract details (ABI, address, owner key) not fully configured. Blockchain features will be disabled.")
+                w3 = None
+                LEARNFLOW_TOKEN_CONTRACT = None
+                CONTRACT_OWNER_ACCOUNT = None
     else:
-        print(f"Connected to Ethereum node: {settings.BLOCKCHAIN_NODE_URL}")
-        LEARNFLOW_TOKEN_CONTRACT = w3.eth.contract(
-            address=settings.LEARNFLOW_TOKEN_CONTRACT_ADDRESS,
-            abi=settings.LEARNFLOW_TOKEN_ABI
-        )
-        CONTRACT_OWNER_ACCOUNT = w3.eth.account.from_key(settings.CONTRACT_OWNER_PRIVATE_KEY)
-        print(f"Loaded LearnFlow Token Contract: {settings.LEARNFLOW_TOKEN_CONTRACT_ADDRESS}")
-        print(f"Contract Owner Account: {CONTRACT_OWNER_ACCOUNT.address}")
+        print("WARNING: BLOCKCHAIN_NODE_URL is not configured. Blockchain features will be disabled.")
 except Web3Exception as e:
     print(f"ERROR: Web3 connection or contract loading failed: {e}")
     w3 = None
@@ -158,6 +172,7 @@ class AuthViewSet(viewsets.ViewSet):
                     student_id_code = request.data.get('student_id_code', None)
                     student_gender = request.data.get('gender', None)
 
+                    # Create a student profile for the user
                     student, created = Student.objects.get_or_create(
                         user=user,
                         defaults={
@@ -167,13 +182,21 @@ class AuthViewSet(viewsets.ViewSet):
                         }
                     )
                     if not created:
+                        # Update existing student if it was just created but already existed (rare with OneToOneField)
                         if student_id_code is not None and student.student_id_code != student_id_code:
                             student.student_id_code = student_id_code
                         if student_gender is not None and student.gender != student_gender:
                             student.gender = student_gender
                         student.save()
+                    
+                    # Create a wallet for the student if one doesn't exist
+                    Wallet.objects.get_or_create(student=student)
 
-                return Response({'message': 'User registered successfully', 'user_id': user.pk, 'token': Token.objects.get(user=user).key}, status=status.HTTP_201_CREATED)
+                token, created = Token.objects.get_or_create(user=user)
+                return Response({'token': token.key, 'user_id': user.id, 'username': user.username}, status=status.HTTP_201_CREATED)
+            except IntegrityError as e:
+                # Catch unique constraint errors, e.g., duplicate student_id_code
+                return Response({'error': 'Registration failed: A user or student with this information already exists.'}, status=status.HTTP_400_BAD_REQUEST)
             except Exception as e:
                 print(f"Error during registration: {e}")
                 return Response({'error': 'Registration failed. Please try again.'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -189,7 +212,7 @@ class AuthViewSet(viewsets.ViewSet):
         if user is not None:
             login(request, user)
             token, created = Token.objects.get_or_create(user=user)
-            return Response({'token': token.key, 'user_id': user.pk, 'username': user.username})
+            return Response({'token': token.key, 'user_id': user.id, 'username': user.username})
         else:
             return Response({'error': 'Invalid Credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
@@ -201,6 +224,12 @@ class AuthViewSet(viewsets.ViewSet):
             return Response(status=status.HTTP_204_NO_CONTENT)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated], url_path='user')
+    def get_current_user(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
 
 # NEW VIEWSET: Wallet Management
 class WalletViewSet(viewsets.ModelViewSet):
@@ -217,6 +246,7 @@ class WalletViewSet(viewsets.ModelViewSet):
         try:
             student = Student.objects.get(user=self.request.user)
         except Student.DoesNotExist:
+            # Use the imported 'serializers' module for ValidationError
             raise serializers.ValidationError({"student": "No student profile found for the current user. Please register as a student first."})
 
         # Check if a wallet already exists for this student
@@ -312,6 +342,8 @@ class LessonViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             self.permission_classes = [IsAdminUser]
+        else: # For 'list' and 'retrieve'
+            self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
 
 class QuestionViewSet(viewsets.ModelViewSet):
@@ -322,7 +354,16 @@ class QuestionViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             self.permission_classes = [IsAdminUser]
+        else: # For 'list' and 'retrieve'
+            self.permission_classes = [IsAuthenticated]
         return super().get_permissions()
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        lesson_uuid = self.request.query_params.get('lesson__uuid', None)
+        if lesson_uuid is not None:
+            queryset = queryset.filter(lesson__uuid=lesson_uuid)
+        return queryset
 
 class QuizAttemptViewSet(viewsets.ModelViewSet):
     queryset = QuizAttempt.objects.all().order_by('-attempt_timestamp')
@@ -333,6 +374,15 @@ class QuizAttemptViewSet(viewsets.ModelViewSet):
         if not self.request.user.is_staff:
             return self.queryset.filter(student__user=self.request.user)
         return self.queryset
+
+    # Explicitly defining the create method to ensure serializer is in scope
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer) # 'serializer' is passed here
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+
 
     def perform_create(self, serializer):
         student_id_code = serializer.validated_data.get('student_id_code')
@@ -348,6 +398,7 @@ class QuizAttemptViewSet(viewsets.ModelViewSet):
                     else:
                         print(f"Student {student.user.username} has no wallet registered. Cannot mint tokens.")
             except Student.DoesNotExist:
+                # Use the imported 'serializers' module for ValidationError
                 raise serializers.ValidationError({"student_id_code": "Student with this ID code does not exist."})
         else:
             try:
@@ -361,10 +412,11 @@ class QuizAttemptViewSet(viewsets.ModelViewSet):
                     else:
                         print(f"Student {student.user.username} has no wallet registered. Cannot mint tokens.")
             except Student.DoesNotExist:
+                # Use the imported 'serializers' module for ValidationError
                 raise serializers.ValidationError({"student": "No student profile found for the current user. Please ensure your student ID code is set or register as a student."})
 
 
-    @action(detail=False, methods=['post'])
+    @action(detail=False, methods=['post'], url_path='bulk_upload')
     def bulk_upload(self, request):
         serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
@@ -381,10 +433,16 @@ class QuizAttemptViewSet(viewsets.ModelViewSet):
                     if client_uuid_obj is None:
                         raise ValueError("UUID is missing from client data.")
 
-                    student_id_code = item_data.pop('student_id_code')
+                    student_id_code = item_data.pop('student_id_code', None) # Make optional for existing users
                     question_uuid = item_data.pop('question_uuid')
 
-                    student = Student.objects.get(student_id_code=student_id_code)
+                    student = None
+                    if student_id_code:
+                        student = Student.objects.get(student_id_code=student_id_code)
+                    else:
+                        # Fallback to current authenticated user's student profile
+                        student = Student.objects.get(user=request.user)
+
                     question = Question.objects.get(uuid=question_uuid)
 
                     defaults = {
@@ -408,7 +466,7 @@ class QuizAttemptViewSet(viewsets.ModelViewSet):
 
                     if not created:
                         for field, value in defaults.items():
-                            if field not in ['uuid', 'student', 'question']:
+                            if field not in ['uuid', 'student', 'question']: # Don't update immutable fields
                                 setattr(attempt, field, value)
                         attempt.save()
 
@@ -551,8 +609,185 @@ def export_quiz_attempts_csv(request):
     return response
 
 
-@login_required
-@permission_classes([IsAdminUser])
+# --- AI Endpoints (Callable by authenticated users) ---
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ai_quiz_feedback(request):
+    """
+    API endpoint for AI quiz feedback generation.
+    """
+    question_text = request.data.get('question_text')
+    submitted_answer = request.data.get('submitted_answer')
+    correct_answer = request.data.get('correct_answer')
+    question_type = request.data.get('question_type')
+
+    if not all([question_text, submitted_answer, correct_answer, question_type]):
+        return Response({'error': 'Missing required parameters for AI feedback.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        # Calls the helper function for AI logic
+        feedback_data = get_ai_quiz_feedback_helper(question_text, submitted_answer, correct_answer, question_type)
+        return Response(feedback_data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': f'AI feedback generation failed: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def ai_recommendations(request):
+    """
+    API endpoint for AI student recommendations generation.
+    """
+    student_id_code = request.data.get('student_id_code')
+    if not student_id_code:
+        return Response({'error': 'Missing student_id_code.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        student = Student.objects.get(student_id_code=student_id_code)
+        # Calls the helper function for AI logic
+        recommendations = get_ai_recommendations_for_student_helper(student)
+        return Response({'recommendations': recommendations}, status=status.HTTP_200_OK)
+    except Student.DoesNotExist:
+        return Response({'error': 'Student not found.'}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response({'error': f'AI recommendation generation failed: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+# --- AI Helper Functions (These are the actual logic, called by the API views above) ---
+def get_ai_quiz_feedback_helper(question_text, submitted_answer, correct_answer, question_type):
+    """
+    Helper function for AI quiz feedback generation.
+    In a real scenario, this would call an external AI model.
+    """
+    print(f"AI Feedback Request: Q='{question_text}', A='{submitted_answer}', Correct='{correct_answer}', Type='{question_type}'")
+    # Simulate AI response
+    score = 0
+    feedback_text = "Feedback not generated (AI integration placeholder)."
+    if question_type == 'MCQ':
+        if submitted_answer == correct_answer:
+            score = 100
+            feedback_text = "Correct! Well done."
+        else:
+            score = 0
+            feedback_text = f"Incorrect. The correct answer was: {correct_answer}."
+    elif question_type == 'SA':
+        # Simple keyword matching for SA, replace with actual AI call
+        if correct_answer.lower() in submitted_answer.lower():
+            score = 70
+            feedback_text = "Partially correct. Your answer contains key elements."
+        else:
+            score = 20
+            feedback_text = "Keep trying! Review the material related to this question."
+    
+    return {"feedback_text": feedback_text, "score": score}
+
+def get_ai_recommendations_for_student_helper(student):
+    """
+    Helper function for AI student recommendations generation.
+    In a real scenario, this would call an external AI model based on student progress.
+    """
+    print(f"AI Recommendations Request for student: {student.user.username}")
+    # Simulate AI response
+    recommendations_list = [
+        "Review lessons on 'Trees and their types'.",
+        "Practice more short answer questions on plant biology.",
+        "Focus on understanding the core concepts of photosynthesis."
+    ]
+    summary_message = f"Based on {student.user.username}'s recent performance, here are some personalized recommendations."
+    return {"recommendations_list": recommendations_list, "summary_message": summary_message}
+
+
+def update_student_overall_progress(student, quiz_attempt):
+    """
+    Updates the overall_progress_data for a single student based on a new quiz attempt.
+    """
+    try:
+        student_progress, created = StudentProgress.objects.get_or_create(student=student)
+        
+        current_progress_data = student_progress.overall_progress_data
+        if not isinstance(current_progress_data, dict):
+            current_progress_data = {}
+
+        lesson_uuid = str(quiz_attempt.question.lesson.uuid) if quiz_attempt.question.lesson else 'no_lesson_uuid'
+        
+        lesson_data = current_progress_data.get(lesson_uuid, {
+            'status': 'in_progress',
+            'score_sum': 0,
+            'attempt_count': 0,
+            'score_avg': 0.0,
+            'last_attempt_date': None,
+        })
+
+        lesson_data['score_sum'] += quiz_attempt.score if quiz_attempt.score is not None else 0
+        lesson_data['attempt_count'] += 1
+        lesson_data['score_avg'] = lesson_data['score_sum'] / lesson_data['attempt_count'] if lesson_data['attempt_count'] > 0 else 0.0
+        lesson_data['last_attempt_date'] = quiz_attempt.attempt_timestamp.isoformat()
+
+        if quiz_attempt.score == 100:
+            lesson_data['status'] = 'completed'
+        elif lesson_data['status'] != 'completed':
+            lesson_data['status'] = 'in_progress'
+
+        current_progress_data[lesson_uuid] = lesson_data
+        
+        student_progress.overall_progress_data = current_progress_data
+        student_progress.last_updated = timezone.now()
+        student_progress.save()
+        print(f"Updated StudentProgress for {student.user.username}: {current_progress_data}")
+
+    except Exception as e:
+        print(f"Error updating student overall progress for {student.user.username}: {e}")
+
+
+def update_student_overall_progress_bulk(student, quiz_attempts_queryset):
+    """
+    Recalculates and updates the overall_progress_data for a student based on a queryset of their quiz attempts.
+    """
+    try:
+        student_progress, created = StudentProgress.objects.get_or_create(student=student)
+        
+        new_progress_data = {}
+        
+        attempts_by_lesson = {}
+        for attempt in quiz_attempts_queryset:
+            lesson_uuid = str(attempt.question.lesson.uuid) if attempt.question.lesson else 'no_lesson_uuid'
+            if lesson_uuid not in attempts_by_lesson:
+                attempts_by_lesson[lesson_uuid] = []
+            attempts_by_lesson[lesson_uuid].append(attempt)
+        
+        for lesson_uuid, attempts in attempts_by_lesson.items():
+            total_score_sum = sum(a.score for a in attempts if a.score is not None)
+            total_attempt_count = len(attempts)
+            average_score = total_score_sum / total_attempt_count if total_attempt_count > 0 else 0.0
+            
+            status = 'in_progress'
+            if average_score == 100:
+                status = 'completed'
+            elif any(a.is_correct for a in attempts): # If any attempt was correct, it's at least in progress
+                status = 'in_progress'
+            
+            last_attempt_date = max(a.attempt_timestamp for a in attempts).isoformat() if attempts else None
+
+            new_progress_data[lesson_uuid] = {
+                'status': status,
+                'score_sum': total_score_sum,
+                'attempt_count': total_attempt_count,
+                'score_avg': round(average_score, 2),
+                'last_attempt_date': last_attempt_date,
+            }
+        
+        student_progress.overall_progress_data = new_progress_data
+        student_progress.last_updated = timezone.now()
+        student_progress.save()
+        print(f"Recalculated and updated StudentProgress for {student.user.username} (Bulk): {new_progress_data}")
+
+    except Exception as e:
+        print(f"Error recalculating student overall progress for {student.user.username} (Bulk): {e}")
+
+# Teacher Dashboard View (Django Template)
+# This view is for rendering the HTML dashboard, not for API consumption directly by Flutter.
+# It uses @login_required and @permission_classes for Django's template rendering context.
+@api_view(['GET']) # Still needs api_view for DRF to recognize it as an API endpoint, even if it renders HTML
+@permission_classes([IsAdminUser]) # Only staff can access this view
 def teacher_dashboard_view(request):
     """
     Renders a comprehensive teacher dashboard with student progress reports.
@@ -568,6 +803,7 @@ def teacher_dashboard_view(request):
             student_progress = student.overall_progress
         except StudentProgress.DoesNotExist:
             print(f"No StudentProgress found for student: {student.user.username}")
+            # Create a default progress entry if none exists
             student_progress = StudentProgress.objects.create(student=student, overall_progress_data={})
 
 
@@ -584,6 +820,7 @@ def teacher_dashboard_view(request):
 
         if student_progress and student_progress.overall_progress_data:
             progress_data = student_progress.overall_progress_data
+            # Ensure progress_data is a dict, it might be a string if not properly loaded/saved
             if isinstance(progress_data, str):
                 try:
                     progress_data = json.loads(progress_data)
@@ -593,6 +830,7 @@ def teacher_dashboard_view(request):
             if isinstance(progress_data, dict):
                 student_info['overall_progress_summary'] = progress_data
         
+        # Fetch recent quiz attempts, prefetching related question and lesson data
         recent_attempts = QuizAttempt.objects.filter(student=student).select_related('question__lesson').order_by('-attempt_timestamp')[:5]
         
         for attempt in recent_attempts:
@@ -633,247 +871,6 @@ def teacher_dashboard_view(request):
             return response
         return HttpResponse('We had some errors <pre>%s</pre>' % html)
     
+    # Render the HTML template for direct browser access
     return render(request, 'teacher_dashboard.html', context)
-
-
-def update_student_overall_progress(student, quiz_attempt):
-    """
-    Updates the overall_progress_data for a single student based on a new quiz attempt.
-    """
-    try:
-        student_progress, created = StudentProgress.objects.get_or_create(student=student)
-        
-        current_progress_data = student_progress.overall_progress_data
-        if not isinstance(current_progress_data, dict):
-            current_progress_data = {}
-
-        lesson_uuid = str(quiz_attempt.question.lesson.uuid) if quiz_attempt.question.lesson else 'no_lesson_uuid'
-        
-        lesson_data = current_progress_data.get(lesson_uuid, {
-            'status': 'in_progress',
-            'score_sum': 0,
-            'attempt_count': 0,
-            'score_avg': 0.0,
-            'last_attempt_date': None,
-        })
-
-        lesson_data['score_sum'] += quiz_attempt.score
-        lesson_data['attempt_count'] += 1
-        lesson_data['score_avg'] = lesson_data['score_sum'] / lesson_data['attempt_count']
-        lesson_data['last_attempt_date'] = quiz_attempt.attempt_timestamp.isoformat()
-
-        if quiz_attempt.score == 100:
-            lesson_data['status'] = 'completed'
-        elif lesson_data['status'] != 'completed':
-            lesson_data['status'] = 'in_progress'
-
-        current_progress_data[lesson_uuid] = lesson_data
-        
-        student_progress.overall_progress_data = current_progress_data
-        student_progress.last_updated = timezone.now()
-        student_progress.save()
-        print(f"Updated StudentProgress for {student.user.username}: {current_progress_data}")
-
-    except Exception as e:
-        print(f"Error updating student overall progress for {student.user.username}: {e}")
-
-
-def update_student_overall_progress_bulk(student, quiz_attempts_queryset):
-    """
-    Recalculates and updates the overall_progress_data for a student based on a queryset of their quiz attempts.
-    """
-    try:
-        student_progress, created = StudentProgress.objects.get_or_create(student=student)
-        
-        new_progress_data = {}
-        
-        attempts_by_lesson = {}
-        for attempt in quiz_attempts_queryset:
-            lesson_uuid = str(attempt.question.lesson.uuid) if attempt.question.lesson else 'no_lesson_uuid'
-            if lesson_uuid not in attempts_by_lesson:
-                attempts_by_lesson[lesson_uuid] = []
-            attempts_by_lesson[lesson_uuid].append(attempt)
-        
-        for lesson_uuid, attempts in attempts_by_lesson.items():
-            total_score_sum = sum(a.score for a in attempts)
-            total_attempt_count = len(attempts)
-            average_score = total_score_sum / total_attempt_count if total_attempt_count > 0 else 0.0
-            
-            status = 'in_progress'
-            if average_score == 100:
-                status = 'completed'
-            elif any(a.is_correct for a in attempts):
-                status = 'in_progress'
-            
-            last_attempt_date = max(a.attempt_timestamp for a in attempts).isoformat() if attempts else None
-
-            new_progress_data[lesson_uuid] = {
-                'status': status,
-                'score_sum': total_score_sum,
-                'attempt_count': total_attempt_count,
-                'score_avg': round(average_score, 2),
-                'last_attempt_date': last_attempt_date,
-            }
-        
-        student_progress.overall_progress_data = new_progress_data
-        student_progress.last_updated = timezone.now()
-        student_progress.save()
-        print(f"Recalculated and updated StudentProgress for {student.user.username} (Bulk): {new_progress_data}")
-
-    except Exception as e:
-        print(f"Error recalculating student overall progress for {student.user.username} (Bulk): {e}")
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def ai_quiz_feedback(request):
-    """
-    Receives a question, submitted answer, and correct answer,
-    then uses Gemini API to generate feedback and a score.
-    """
-    question_text = request.data.get('question_text')
-    submitted_answer = request.data.get('submitted_answer')
-    correct_answer = request.data.get('correct_answer')
-
-    if not all([question_text, submitted_answer, correct_answer]):
-        return Response({'error': 'Missing question_text, submitted_answer, or correct_answer'}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        prompt = (
-            f"Given the following question, a submitted answer, and the correct answer, "
-            f"provide constructive feedback and a score (out of 100) for the submitted answer. "
-            f"Focus on accuracy, completeness, and clarity. "
-            f"Output in JSON format with 'feedback_text' and 'score' (integer). "
-            f"Question: \"{question_text}\"\n"
-            f"Submitted Answer: \"{submitted_answer}\"\n"
-            f"Correct Answer: \"{correct_answer}\"\n\n"
-            f"Example JSON output: {{ \"feedback_text\": \"Your answer is partially correct...\", \"score\": 75 }}"
-        )
-
-        api_key = ""
-        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-
-        payload = {
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [{"text": prompt}]
-                }
-            ],
-            "generationConfig": {
-                "responseMimeType": "application/json",
-                "responseSchema": {
-                    "type": "OBJECT",
-                    "properties": {
-                        "feedback_text": {"type": "STRING"},
-                        "score": {"type": "NUMBER"}
-                    },
-                    "propertyOrdering": ["feedback_text", "score"]
-                }
-            }
-        }
-
-        response = requests.post(api_url, headers={'Content-Type': 'application/json'}, data=json.dumps(payload))
-        response.raise_for_status()
-
-        gemini_result = response.json()
-        
-        if gemini_result and gemini_result.get('candidates') and gemini_result['candidates'][0].get('content') and gemini_result['candidates'][0]['content'].get('parts'):
-            json_string = gemini_result['candidates'][0]['content']['parts'][0]['text']
-            feedback_data = json.loads(json_string)
-            
-            score = feedback_data.get('score')
-            if isinstance(score, (int, float)):
-                score = max(0, min(100, score))
-            else:
-                score = 0
-
-            return Response({
-                'feedback_text': feedback_data.get('feedback_text', 'No feedback provided.'),
-                'score': score
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Invalid response from AI model'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    except requests.exceptions.RequestException as e:
-        print(f"Gemini API Request Error: {e}")
-        return Response({'error': f'Failed to connect to AI service: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    except json.JSONDecodeError as e:
-        print(f"JSON Decode Error from Gemini response: {e}, Response: {response.text}")
-        return Response({'error': 'Invalid JSON response from AI model'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    except Exception as e:
-        print(f"Unexpected error in AI quiz feedback view: {e}")
-        return Response({'error': f'An unexpected error occurred: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def ai_recommendations(request):
-    """
-    Receives student performance summary and uses Gemini API to generate recommendations.
-    """
-    student_performance_summary = request.data.get('student_performance_summary')
-
-    if not student_performance_summary:
-        return Response({'error': 'Missing student_performance_summary'}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        prompt = (
-            f"Based on the following student performance summary, provide personalized learning recommendations. "
-            f"Suggest specific topics to review, next steps, or areas for improvement. "
-            f"Output in JSON format with a 'recommendations_list' (array of strings) and a 'summary_message' (string). "
-            f"Student Performance Summary: \"{student_performance_summary}\"\n\n"
-            f"Example JSON output: {{ \"recommendations_list\": [\"Review Topic A\", \"Practice more MCQs\"], \"summary_message\": \"Great effort!\" }}"
-        )
-
-        api_key = ""
-        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={api_key}"
-
-        payload = {
-            "contents": [
-                {
-                    "role": "user",
-                    "parts": [{"text": prompt}]
-                }
-            ],
-            "generationConfig": {
-                "responseMimeType": "application/json",
-                "responseSchema": {
-                    "type": "OBJECT",
-                    "properties": {
-                        "recommendations_list": {
-                            "type": "ARRAY",
-                            "items": {"type": "STRING"}
-                        },
-                        "summary_message": {"type": "STRING"}
-                    },
-                    "propertyOrdering": ["recommendations_list", "summary_message"]
-                }
-            }
-        }
-
-        response = requests.post(api_url, headers={'Content-Type': 'application/json'}, data=json.dumps(payload))
-        response.raise_for_status()
-
-        gemini_result = response.json()
-
-        if gemini_result and gemini_result.get('candidates') and gemini_result['candidates'][0].get('content') and gemini_result['candidates'][0]['content'].get('parts'):
-            json_string = gemini_result['candidates'][0]['content']['parts'][0]['text']
-            recommendations_data = json.loads(json_string)
-            
-            return Response({
-                'recommendations_list': recommendations_data.get('recommendations_list', []),
-                'summary_message': recommendations_data.get('summary_message', 'No specific recommendations provided.')
-            }, status=status.HTTP_200_OK)
-        else:
-            return Response({'error': 'Invalid response from AI model'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    except requests.exceptions.RequestException as e:
-        print(f"Gemini API Request Error: {e}")
-        return Response({'error': f'Failed to connect to AI service: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    except json.JSONDecodeError as e:
-        print(f"JSON Decode Error from Gemini response: {e}, Response: {response.text}")
-        return Response({'error': 'Invalid JSON response from AI model'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-    except Exception as e:
-        print(f"Unexpected error in AI recommendations view: {e}")
-        return Response({'error': f'An unexpected error occurred: {e}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
