@@ -13,6 +13,7 @@ import csv
 from django.http import HttpResponse
 from django.utils import timezone
 from django.db.models import Avg, Prefetch
+from django.contrib.auth.decorators import login_required, user_passes_test # NEW IMPORTS
 
 from django.template.loader import get_template
 from io import BytesIO
@@ -806,8 +807,11 @@ def update_student_overall_progress_bulk(student, quiz_attempts_queryset):
 # Teacher Dashboard View (Django Template)
 # This view is for rendering the HTML dashboard, not for API consumption directly by Flutter.
 # It uses @login_required and @permission_classes for Django's template rendering context.
-@api_view(['GET']) # Still needs api_view for DRF to recognize it as an API endpoint, even if it renders HTML
-@permission_classes([IsAdminUser]) # Only staff can access this view
+from django.contrib.admin.views.decorators import staff_member_required # Import this
+from django.contrib.auth.decorators import login_required # Already imported, but ensure it's here
+
+@login_required # Requires user to be logged in
+@user_passes_test(lambda u: u.is_staff) # Requires user to be a staff member (admin)
 def teacher_dashboard_view(request):
     """
     Renders a comprehensive teacher dashboard with student progress reports.
@@ -868,3 +872,73 @@ def teacher_dashboard_view(request):
         
         avg_score_result = QuizAttempt.objects.filter(student=student).aggregate(Avg('score'))
         student_info['average_score'] = avg_score_result['score__avg'] if avg_score_result['score__avg'] is not None else 0.0
+
+        students_data.append(student_info)
+
+    context = {
+        'students_data': students_data,
+        'current_date': timezone.now().strftime("%Y-%m-%d"),
+    }
+
+    if request.GET.get('format') == 'pdf':
+        template_path = 'teacher_dashboard.html'
+        template = get_template(template_path)
+        html = template.render(context)
+
+        result = BytesIO()
+
+        pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+
+        if not pdf.err:
+            response = HttpResponse(result.getvalue(), content_type='application/pdf')
+            response['Content-Disposition'] = 'attachment; filename="teacher_dashboard_report.pdf"'
+            return response
+        return HttpResponse('We had some errors <pre>%s</pre>' % html)
+    
+    # Render the HTML template for direct browser access
+    return render(request, 'teacher_dashboard.html', context)
+
+
+@api_view(['GET']) # This view is specifically for CSV export
+@permission_classes([IsAdminUser]) # Only staff can access this view
+def export_quiz_attempts_csv(request):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="quiz_attempts_report.csv"'
+
+    writer = csv.writer(response)
+    
+    writer.writerow([
+        'Attempt UUID',
+        'Student Username',
+        'Student ID Code',
+        'Lesson Title',
+        'Question Text',
+        'Question Type',
+        'Submitted Answer',
+        'Is Correct',
+        'Score',
+        'AI Feedback Text',
+        'Attempt Timestamp',
+        'Sync Status',
+        'Device ID'
+    ])
+
+    quiz_attempts = QuizAttempt.objects.select_related('student__user', 'question__lesson').all().order_by('attempt_timestamp')
+
+    for attempt in quiz_attempts:
+        writer.writerow([
+            str(attempt.uuid),
+            attempt.student.user.username,
+            attempt.student.student_id_code,
+            attempt.question.lesson.title if attempt.question.lesson else 'N/A',
+            attempt.question.question_text,
+            attempt.question.question_type,
+            attempt.submitted_answer,
+            'Yes' if attempt.is_correct else 'No',
+            attempt.score,
+            attempt.ai_feedback_text if attempt.ai_feedback_text else '',
+            attempt.attempt_timestamp.isoformat(),
+            attempt.sync_status,
+            attempt.device_id if attempt.device_id else ''
+        ])
+    return response
