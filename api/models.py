@@ -176,9 +176,10 @@ class StudentProgress(models.Model):
 # NEW MODEL: Wallet
 class Wallet(models.Model):
     student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='wallet')
-    address = models.CharField(max_length=42, unique=True, help_text="Ethereum wallet address (0x...)")
+    # CRITICAL FIX: Add null=True and blank=True to allow multiple NULL values for optional addresses
+    address = models.CharField(max_length=42, unique=True, null=True, blank=True, help_text="Ethereum wallet address (0x...)")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Wallet for {self.student.user.username}: {self.address}"
+        return f"Wallet for {self.student.user.username}: {self.address or 'N/A'}"
