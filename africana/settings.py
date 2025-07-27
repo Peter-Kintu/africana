@@ -47,7 +47,6 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# CRITICAL FIX: Corrected project name to 'africana'
 ROOT_URLCONF = 'africana.urls'
 
 TEMPLATES = [
@@ -66,14 +65,10 @@ TEMPLATES = [
     },
 ]
 
-# CRITICAL FIX: Corrected project name to 'africana'
 WSGI_APPLICATION = 'africana.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-# Use DATABASE_URL from environment variable for production (Render.com)
-# Fallback to SQLite for local development if DATABASE_URL is not set
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
@@ -104,18 +99,18 @@ USE_I18N = True
 
 USE_TZ = True
 
+# STATIC FILES CONFIGURATION (CRITICAL FOR ADMIN ON RENDER)
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # Files collected here by collectstatic
+STATIC_ROOT = BASE_DIR / 'staticfiles' # This is where collectstatic will gather all static files
 
-# If you have static files within your apps that aren't in STATIC_ROOT (e.g., specific app static directories)
-# Django's staticfiles finder will look for them. This is usually not needed for Jazzmin/Admin.
-# STATICFILES_DIRS = [
-#     # os.path.join(BASE_DIR, 'static'), # Example: if you have a top-level 'static' folder
-# ]
-
-# IMPORTANT: WhiteNoise configuration for static files
+# Ensure WhiteNoise is configured to serve these collected static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+# Optional: If you have static files that are NOT part of an app's 'static' folder
+# but are at the project level, you would list them here.
+# STATICFILES_DIRS = [
+#     os.path.join(BASE_DIR, 'static_assets'), # Example
+# ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
