@@ -4,6 +4,7 @@ django-cors-headers==4.0.0
 gunicorn
 xhtml2pdf
 dj-database-url
+psycopg2-binary
 web3
 django-jazzmin 
 whitenoise

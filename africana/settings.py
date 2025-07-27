@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 import json
-import dj_database_url
+import dj_database_url # Make sure this import is present
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -47,7 +47,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'africana.urls'
+ROOT_URLCONF = 'africana.urls' # Corrected from 'africana.urls' if your project is 'django_backend'
 
 TEMPLATES = [
     {
@@ -65,13 +65,17 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'africana.wsgi.application'
+WSGI_APPLICATION = 'africana.wsgi.application' # Corrected from 'africana.wsgi.application' if your project is 'django_backend'
+
+# Database
+# https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+
+# Use DATABASE_URL from environment variable for production (Render.com)
+# Fallback to SQLite for local development if DATABASE_URL is not set
+DATABASE_URL = os.environ.get('DATABASE_URL', f'sqlite:///{BASE_DIR / "db.sqlite3"}')
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600
-    )
+    'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600)
 }
 
 AUTH_PASSWORD_VALIDATORS = [
