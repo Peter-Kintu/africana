@@ -8,11 +8,12 @@ import dj_database_url
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
+# It's highly recommended to set this as an environment variable on Render
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-@e^$b!q#^1234567890abcdefghijklmnopqrstuvwxyz')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# TEMPORARY: Set to True to get traceback in browser, then revert to False!
-DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True' # Default to False for production
+# Set this as an environment variable on Render (True for temporary debugging, False for production)
+DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True' # This should read from Render's DJANGO_DEBUG env var
 
 ALLOWED_HOSTS = [
     'localhost',
@@ -69,12 +70,20 @@ WSGI_APPLICATION = 'africana.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
+# Reverted: Use DATABASE_URL from environment variable for production (Render.com)
+# Fallback to SQLite for local development if DATABASE_URL is not set
 DATABASES = {
     'default': dj_database_url.config(
-        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
-        conn_max_age=600
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', # Local SQLite fallback
+        conn_max_age=600,
     )
 }
+# Manually add OPTIONS after config for psycopg2 SSL connection
+# This will apply to the DATABASE_URL if it's a PostgreSQL connection
+DATABASES['default']['OPTIONS'] = {
+    'sslmode': 'require',
+}
+
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -99,18 +108,10 @@ USE_I18N = True
 
 USE_TZ = True
 
-# STATIC FILES CONFIGURATION (CRITICAL FOR ADMIN ON RENDER)
 STATIC_URL = 'static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles' # This is where collectstatic will gather all static files
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
-# Ensure WhiteNoise is configured to serve these collected static files
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-
-# Optional: If you have static files that are NOT part of an app's 'static' folder
-# but are at the project level, you would list them here.
-# STATICFILES_DIRS = [
-#     os.path.join(BASE_DIR, 'static_assets'), # Example
-# ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -144,11 +145,11 @@ SESSION_COOKIE_SECURE = True
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
-# Correct LOGIN_URL to point to the admin login, which Jazzmin overrides
 LOGIN_URL = '/admin/login/'
-LOGIN_REDIRECT_URL = '/admin/' # After successful login, redirect to admin index
+LOGIN_REDIRECT_URL = '/admin/'
 
 # --- BLOCKCHAIN CONFIGURATION ---
+# It's highly recommended to set these as environment variables on Render
 BLOCKCHAIN_NODE_URL = os.environ.get('BLOCKCHAIN_NODE_URL', 'http://127.0.0.1:7545')
 LEARNFLOW_TOKEN_CONTRACT_ADDRESS = os.environ.get('LEARNFLOW_TOKEN_CONTRACT_ADDRESS', '0xYourDeployedContractAddressHere')
 CONTRACT_OWNER_PRIVATE_KEY = os.environ.get('CONTRACT_OWNER_PRIVATE_KEY', '0xYourContractOwnerPrivateKeyHere')

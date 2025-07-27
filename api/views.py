@@ -430,63 +430,79 @@ class QuizAttemptViewSet(viewsets.ModelViewSet):
         students_to_update_progress = set()
 
         for item_data in serializer.validated_data:
+            # Initialize client_uuid_obj to None before the try block
+            client_uuid_obj = None
             try:
-                with transaction.atomic():
-                    client_uuid_obj = item_data.pop('uuid')
+                # Retrieve the uuid directly from validated_data using .get()
+                # This avoids KeyError if 'uuid' is somehow missing (though it shouldn't be with proper serialization)
+                client_uuid_obj = item_data.get('uuid')
 
-                    if client_uuid_obj is None:
-                        raise ValueError("UUID is missing from client data.")
+                # If uuid is still None at this point, it's a critical error
+                if client_uuid_obj is None:
+                    raise ValueError("UUID is missing from client data after serialization.")
 
-                    student_id_code = item_data.pop('student_id_code', None) # Make optional for existing users
-                    question_uuid = item_data.pop('question_uuid')
+                student_id_code = item_data.get('student_id_code')
+                question_uuid = item_data.get('question_uuid')
 
-                    student = None
-                    if student_id_code:
-                        student = Student.objects.get(student_id_code=student_id_code)
+                student = None
+                if student_id_code:
+                    student = Student.objects.get(student_id_code=student_id_code)
+                else:
+                    # Fallback to current authenticated user's student profile
+                    student = Student.objects.get(user=request.user)
+
+                question = Question.objects.get(uuid=question_uuid)
+
+                # Create a dictionary of default values for get_or_create/update
+                # Ensure all fields expected by the QuizAttempt model are present
+                defaults = {
+                    'student': student,
+                    'question': question,
+                    'submitted_answer': item_data.get('submitted_answer'),
+                    'is_correct': item_data.get('is_correct'),
+                    'score': item_data.get('score'),
+                    'ai_feedback_text': item_data.get('ai_feedback_text'),
+                    'raw_ai_response': item_data.get('raw_ai_response'),
+                    'attempt_timestamp': item_data.get('attempt_timestamp'),
+                    'device_id': item_data.get('device_id'),
+                    'synced_at': timezone.now(),
+                    'sync_status': 'SYNCED',
+                }
+
+                # Use get_or_create with the uuid and defaults
+                attempt, created = QuizAttempt.objects.get_or_create(
+                    uuid=client_uuid_obj, # Pass the UUID directly as the lookup field
+                    defaults=defaults
+                )
+
+                if not created:
+                    # If the attempt already existed, update its fields
+                    for field, value in defaults.items():
+                        # Exclude immutable fields from update
+                        if field not in ['uuid', 'student', 'question']:
+                            setattr(attempt, field, value)
+                    attempt.save()
+
+                results.append(QuizAttemptSerializer(attempt).data)
+                students_to_update_progress.add(student)
+                # NEW: Mint tokens if quiz score is good during bulk upload
+                if attempt.score is not None and attempt.score >= 80:
+                    if hasattr(student, 'wallet') and student.wallet.address:
+                        mint_learnflow_tokens(student.wallet.address, 10)
                     else:
-                        # Fallback to current authenticated user's student profile
-                        student = Student.objects.get(user=request.user)
-
-                    question = Question.objects.get(uuid=question_uuid)
-
-                    defaults = {
-                        'student': student,
-                        'question': question,
-                        'submitted_answer': item_data.get('submitted_answer'),
-                        'is_correct': item_data.get('is_correct'),
-                        'score': item_data.get('score'),
-                        'ai_feedback_text': item_data.get('ai_feedback_text'),
-                        'raw_ai_response': item_data.get('raw_ai_response'),
-                        'attempt_timestamp': item_data.get('attempt_timestamp'),
-                        'device_id': item_data.get('device_id'),
-                        'synced_at': timezone.now(),
-                        'sync_status': 'SYNCED',
-                    }
-
-                    attempt, created = QuizAttempt.objects.get_or_create(
-                        uuid=client_uuid_obj,
-                        defaults=defaults
-                    )
-
-                    if not created:
-                        for field, value in defaults.items():
-                            if field not in ['uuid', 'student', 'question']: # Don't update immutable fields
-                                setattr(attempt, field, value)
-                        attempt.save()
-
-                    results.append(QuizAttemptSerializer(attempt).data)
-                    students_to_update_progress.add(student)
-                    # NEW: Mint tokens if quiz score is good during bulk upload
-                    if attempt.score is not None and attempt.score >= 80:
-                        if hasattr(student, 'wallet') and student.wallet.address:
-                            mint_learnflow_tokens(student.wallet.address, 10)
-                        else:
-                            print(f"Student {student.user.username} has no wallet registered during bulk upload. Cannot mint tokens.")
+                        print(f"Student {student.user.username} has no wallet registered during bulk upload. Cannot mint tokens.")
 
             except (Student.DoesNotExist, Question.DoesNotExist) as e:
-                errors.append({'uuid': str(client_uuid_obj), 'error': str(e)})
+                # Ensure client_uuid_obj is stringified for error reporting
+                error_uuid = str(client_uuid_obj) if client_uuid_obj is not None else 'unknown_uuid'
+                errors.append({'uuid': error_uuid, 'error': str(e)})
+            except ValueError as e: # Catch the specific ValueError if UUID is missing
+                error_uuid = str(client_uuid_obj) if client_uuid_obj is not None else 'unknown_uuid'
+                errors.append({'uuid': error_uuid, 'error': str(e)})
             except Exception as e:
-                errors.append({'uuid': str(client_uuid_obj), 'error': f"Unexpected error: {e}"})
+                # Ensure client_uuid_obj is stringified for error reporting
+                error_uuid = str(client_uuid_obj) if client_uuid_obj is not None else 'unknown_uuid'
+                errors.append({'uuid': error_uuid, 'error': f"Unexpected error: {e}"})
         
         for student in students_to_update_progress:
             all_student_attempts = QuizAttempt.objects.filter(student=student).select_related('question__lesson')
@@ -852,29 +868,3 @@ def teacher_dashboard_view(request):
         
         avg_score_result = QuizAttempt.objects.filter(student=student).aggregate(Avg('score'))
         student_info['average_score'] = avg_score_result['score__avg'] if avg_score_result['score__avg'] is not None else 0.0
-
-        students_data.append(student_info)
-
-    context = {
-        'students_data': students_data,
-        'current_date': timezone.now().strftime("%Y-%m-%d"),
-    }
-
-    if request.GET.get('format') == 'pdf':
-        template_path = 'teacher_dashboard.html'
-        template = get_template(template_path)
-        html = template.render(context)
-
-        result = BytesIO()
-
-        pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
-
-        if not pdf.err:
-            response = HttpResponse(result.getvalue(), content_type='application/pdf')
-            response['Content-Disposition'] = 'attachment; filename="teacher_dashboard_report.pdf"'
-            return response
-        return HttpResponse('We had some errors <pre>%s</pre>' % html)
-    
-    # Render the HTML template for direct browser access
-    return render(request, 'teacher_dashboard.html', context)
-
