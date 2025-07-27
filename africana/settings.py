@@ -3,7 +3,7 @@
 import os
 from pathlib import Path
 import json
-import dj_database_url # Make sure this import is present
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -47,7 +47,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-# Corrected: Use 'africana' as the project name based on your traceback
+# CRITICAL FIX: Corrected project name to 'africana'
 ROOT_URLCONF = 'africana.urls'
 
 TEMPLATES = [
@@ -66,7 +66,7 @@ TEMPLATES = [
     },
 ]
 
-# Corrected: Use 'africana' as the project name based on your traceback
+# CRITICAL FIX: Corrected project name to 'africana'
 WSGI_APPLICATION = 'africana.wsgi.application'
 
 # Database
@@ -74,7 +74,6 @@ WSGI_APPLICATION = 'africana.wsgi.application'
 
 # Use DATABASE_URL from environment variable for production (Render.com)
 # Fallback to SQLite for local development if DATABASE_URL is not set
-# Using dj_database_url.config() is generally more robust for env vars
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
