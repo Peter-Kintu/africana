@@ -35,6 +35,9 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     'api',
+    'django_filters', # Ensure django_filters is installed if you use it for filtering
+    'whitenoise.runserver_nostatic', # For WhiteNoise in development
+    'whitenoise.middleware', # For WhiteNoise in production
 ]
 
 MIDDLEWARE = [
@@ -48,7 +51,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'africana.urls'
+ROOT_URLCONF = 'django_backend.urls' # Changed from 'africana.urls' to 'django_backend.urls' if your project is named django_backend
 
 TEMPLATES = [
     {
@@ -66,7 +69,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'africana.wsgi.application'
+WSGI_APPLICATION = 'django_backend.wsgi.application' # Changed from 'africana.wsgi.application' to 'django_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
@@ -75,7 +78,7 @@ WSGI_APPLICATION = 'africana.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', # Local SQLite fallback
-        conn_max_age=600,
+        conn_max_age=600, # Keep connections alive for 600 seconds (10 minutes)
     )
 }
 # Manually add OPTIONS after config for psycopg2 SSL connection
@@ -110,6 +113,11 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Define additional directories where Django will look for static files
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static'), # This tells Django to look in learnflow_ai/django_backend/static/
+]
 
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
