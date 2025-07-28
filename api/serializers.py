@@ -57,6 +57,10 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 
 class QuizAttemptSerializer(serializers.ModelSerializer):
+    # Explicitly define uuid to ensure it's writable and handled
+    # This overrides the default ModelSerializer behavior for primary key UUIDs
+    uuid = serializers.CharField(required=True) # Make it required as Flutter sends it
+
     # To display related info for dashboard
     question_text_preview = serializers.CharField(source='question.question_text', read_only=True)
     lesson_title = serializers.CharField(source='question.lesson.title', read_only=True) # Added for dashboard
@@ -75,9 +79,13 @@ class QuizAttemptSerializer(serializers.ModelSerializer):
             'question_uuid', 'student_id_code', # These are write_only or for data linking
             'student_username', 'question_text_preview', 'lesson_title' # These are read_only
         )
-        read_only_fields = ('synced_at', 'student', 'question') # student and question will be resolved from UUIDs/ID code
+        # student and question will be resolved from UUIDs/ID code in create/update
+        read_only_fields = ('synced_at', 'student', 'question') 
 
     def create(self, validated_data):
+        # Pop uuid first, as it's a special field (primary key from client)
+        quiz_attempt_uuid = validated_data.pop('uuid') # Get the UUID from validated data
+
         # Resolve Question and Student from UUIDs/ID codes
         question_uuid = validated_data.pop('question_uuid', None)
         student_id_code = validated_data.pop('student_id_code', None)
@@ -98,12 +106,16 @@ class QuizAttemptSerializer(serializers.ModelSerializer):
         if 'student' not in validated_data or 'question' not in validated_data:
             raise serializers.ValidationError("Both student and question must be provided or resolvable.")
 
-        return super().create(validated_data)
+        # Create the QuizAttempt instance, explicitly passing the UUID
+        instance = QuizAttempt.objects.create(uuid=quiz_attempt_uuid, **validated_data)
+        return instance
 
     def update(self, instance, validated_data):
         # Prevent updates to question_uuid or student_id_code after creation
         validated_data.pop('question_uuid', None)
         validated_data.pop('student_id_code', None)
+        # Also prevent update to uuid if it's considered immutable after creation
+        validated_data.pop('uuid', None) # UUID should not be updated after creation
         return super().update(instance, validated_data)
 
 
@@ -155,4 +167,3 @@ class WalletSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data.pop('student_user_id', None) # Not used for update
         return super().update(instance, validated_data)
-
