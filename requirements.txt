@@ -8,3 +8,4 @@ psycopg2-binary
 web3
 django-jazzmin 
 whitenoise
+django-filter==24.2
