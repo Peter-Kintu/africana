@@ -51,7 +51,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'django_backend.urls' # Changed from 'africana.urls' to 'django_backend.urls' if your project is named django_backend
+ROOT_URLCONF = 'africana.urls' # Changed from 'africana.urls' to 'django_backend.urls' if your project is named django_backend
 
 TEMPLATES = [
     {
@@ -69,23 +69,23 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'django_backend.wsgi.application' # Changed from 'africana.wsgi.application' to 'django_backend.wsgi.application'
+WSGI_APPLICATION = 'africana.wsgi.application' # Changed from 'africana.wsgi.application' to 'django_backend.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-# Reverted: Use DATABASE_URL from environment variable for production (Render.com)
-# Fallback to SQLite for local development if DATABASE_URL is not set
+
 DATABASES = {
     'default': dj_database_url.config(
         default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', # Local SQLite fallback
         conn_max_age=600, # Keep connections alive for 600 seconds (10 minutes)
     )
 }
-# Manually add OPTIONS after config for psycopg2 SSL connection
-# This will apply to the DATABASE_URL if it's a PostgreSQL connection
-DATABASES['default']['OPTIONS'] = {
-    'sslmode': 'require',
-}
+
+# Conditional SSLmode for PostgreSQL
+if 'DATABASE_URL' in os.environ:
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require',
+    }
 
 
 AUTH_PASSWORD_VALIDATORS = [
