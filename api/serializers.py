@@ -29,6 +29,18 @@ class StudentSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
     user_id = serializers.IntegerField(write_only=True, required=False) # For linking existing user
 
+    # Explicitly define fields that can be null and ensure allow_null=True
+    # ModelSerializer usually infers this from Django model's null=True, blank=True
+    # but explicitly defining them provides clarity and ensures behavior.
+    date_of_birth = serializers.DateField(required=False, allow_null=True)
+    gender = serializers.ChoiceField(choices=GENDER_CHOICES, required=False, allow_null=True)
+    grade_level = serializers.CharField(max_length=50, required=False, allow_null=True)
+    class_name = serializers.CharField(max_length=50, required=False, allow_null=True)
+    school_name = serializers.CharField(max_length=255, required=False, allow_null=True)
+    last_device_sync = serializers.DateTimeField(required=False, allow_null=True)
+    student_id_code = serializers.CharField(max_length=100, required=False, allow_null=True)
+
+
     class Meta:
         model = Student
         fields = '__all__'
