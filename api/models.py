@@ -36,6 +36,7 @@ SYNC_STATUS_CHOICES = [
 ]
 
 class Student(models.Model):
+    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)  # <-- Add this line
     # Link to Django's built-in User model for authentication and basic user info
     user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
     # A unique code for the student, e.g., generated in-app or by teacher for easy identification
