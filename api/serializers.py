@@ -261,3 +261,4 @@ class WalletSerializer(serializers.ModelSerializer):
     def update(self, instance, validated_data):
         validated_data.pop('student_user_id', None) # Not used for update
         return super().update(instance, validated_data)
+    
