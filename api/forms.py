@@ -19,63 +19,22 @@ class QuestionAdminForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.options:
             # Ensure options_list is a list, even if self.instance.options is None
-            options_list = self.instance.options or []
-            if len(options_list) > 0:
-                self.initial['option_a'] = options_list[0]
-            if len(options_list) > 1:
-                self.initial['option_b'] = options_list[1]
-            if len(options_list) > 2:
-                self.initial['option_c'] = options_list[2]
-            if len(options_list) > 3:
-                self.initial['option_d'] = options_list[3]
-
-        if 'options' in self.fields:
-            self.fields['options'].widget = forms.HiddenInput()
-            self.fields['options'].required = False
+            options_list = json.loads(self.instance.options) if self.instance.options else []
+            self.initial['option_a'] = options_list[0] if len(options_list) > 0 else ''
+            self.initial['option_b'] = options_list[1] if len(options_list) > 1 else ''
+            self.initial['option_c'] = options_list[2] if len(options_list) > 2 else ''
+            self.initial['option_d'] = options_list[3] if len(options_list) > 3 else ''
 
     def clean(self):
         cleaned_data = super().clean()
-        question_type = cleaned_data.get('question_type')
-
-        # Removed DEBUG PRINT
-        # print(f"DEBUG: In clean() method. Question type: {question_type}")
-
-        if question_type == 'MCQ':
-            options = []
-            if cleaned_data.get('option_a'):
-                options.append(cleaned_data['option_a'])
-            if cleaned_data.get('option_b'):
-                options.append(cleaned_data['option_b'])
-            if cleaned_data.get('option_c'):
-                options.append(cleaned_data['option_c'])
-            if cleaned_data.get('option_d'):
-                options.append(cleaned_data['option_d'])
-
-            # Removed DEBUG PRINT
-            # print(f"DEBUG: Collected options (before validation): {options}")
-
-            if len(options) < 2:
-                self.add_error(None, "MCQ questions must have at least two options (Option A, B, C, or D).")
-                # Removed DEBUG PRINT
-                # print("DEBUG: Validation error: Less than 2 options for MCQ.")
-
-            cleaned_data['options'] = options
-            # Removed DEBUG PRINT
-            # print(f"DEBUG: Final cleaned_data['options'] for MCQ: {cleaned_data['options']}")
-        else:
-            cleaned_data['options'] = []
-            # Removed DEBUG PRINT
-            # print(f"DEBUG: Question type is not MCQ. Setting options to empty list: {cleaned_data['options']}")
-
+        options = [
+            cleaned_data.get('option_a'),
+            cleaned_data.get('option_b'),
+            cleaned_data.get('option_c'),
+            cleaned_data.get('option_d'),
+        ]
+        # Filter out empty strings/None values and save as a JSON string
+        cleaned_options = [opt for opt in options if opt]
+        # Re-assign the cleaned options to the 'options' field of the model instance
+        self.instance.options = json.dumps(cleaned_options)
         return cleaned_data
-
-    def save(self, commit=True):
-        instance = super().save(commit=False)
-
-        # Assign the combined options list to the model's JSONField
-        # This is the crucial step that writes the collected options to the model instance
-        instance.options = self.cleaned_data.get('options', [])
-
-        if commit:
-            instance.save()
-        return instance
