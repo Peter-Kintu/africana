@@ -13,7 +13,6 @@ from .views import (
 router = DefaultRouter()
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'students', StudentViewSet, basename='student')
-router.register(r'teachers', TeacherViewSet, basename='teacher')
 router.register(r'lessons', LessonViewSet, basename='lesson')
 router.register(r'questions', QuestionViewSet, basename='question')
 router.register(r'quiz-attempts', QuizAttemptViewSet, basename='quiz-attempt')
