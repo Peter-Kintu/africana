@@ -4,7 +4,7 @@ from .views import (
     AuthViewSet, StudentViewSet, LessonViewSet, QuestionViewSet,
     QuizAttemptViewSet, StudentProgressViewSet,
     export_quiz_attempts_csv,
-    teacher_dashboard, # Corrected view name
+    teacher_dashboard, 
     ai_quiz_feedback, ai_recommendations,
     teacher_books, publish_book, video_page, add_video, home
 )
