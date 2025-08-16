@@ -1,20 +1,18 @@
-# learnflow_ai/django_backend/africana/urls.py
-
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.authtoken.views import obtain_auth_token
 from django.conf import settings
 # from django.conf.urls.static import static # REMOVED: No longer needed with WhiteNoise
 
-# Only import teacher_dashboard_view if it's used directly here
-from api.views import teacher_dashboard_view
+# Corrected: Import 'teacher_dashboard' instead of 'teacher_dashboard_view'
+from api.views import teacher_dashboard
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('api.urls')),
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('teacher-dashboard/', teacher_dashboard_view, name='teacher-dashboard'),
+    path('teacher-dashboard/', teacher_dashboard, name='teacher-dashboard'),
 ]
 
 # IMPORTANT: DO NOT serve static files directly in production via Django/Gunicorn
