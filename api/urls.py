@@ -4,15 +4,16 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
     AuthViewSet, StudentViewSet, LessonViewSet, QuestionViewSet,
-    QuizAttemptViewSet, StudentProgressViewSet,
+    QuizAttemptViewSet, StudentProgressViewSet, TeacherViewSet,
     export_quiz_attempts_csv,
     teacher_dashboard_view,
-    ai_quiz_feedback, ai_recommendations, # AI views - These are correctly named
+    ai_quiz_feedback, ai_recommendations,
 )
 
 router = DefaultRouter()
 router.register(r'auth', AuthViewSet, basename='auth')
 router.register(r'students', StudentViewSet, basename='student')
+router.register(r'teachers', TeacherViewSet, basename='teacher')
 router.register(r'lessons', LessonViewSet, basename='lesson')
 router.register(r'questions', QuestionViewSet, basename='question')
 router.register(r'quiz-attempts', QuizAttemptViewSet, basename='quiz-attempt')

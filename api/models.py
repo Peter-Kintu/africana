@@ -1,103 +1,106 @@
 # learnflow_ai/django_backend/api/models.py
-
 from django.db import models
-from django.conf import settings
+from django.contrib.auth.models import AbstractUser
+from django.core.validators import MaxValueValidator, MinValueValidator
 import uuid
-from django.utils import timezone
 
-try:
-    from django.db.models import JSONField
-except ImportError:
-    from django.contrib.postgres.fields import JSONField
+# Custom User Model
+class User(AbstractUser):
+    pass
 
-GENDER_CHOICES = [
+# Gender and Question Type Choices
+GENDER_CHOICES = (
     ('M', 'Male'),
     ('F', 'Female'),
     ('O', 'Other'),
-]
+)
 
-QUESTION_TYPE_CHOICES = [
+QUESTION_TYPE_CHOICES = (
     ('MCQ', 'Multiple Choice Question'),
-    ('SA', 'Short Answer'),
-]
+    ('TF', 'True/False'),
+    ('OQ', 'Open Question'),
+)
 
-DIFFICULTY_CHOICES = [
-    ('Easy', 'Easy'),
-    ('Medium', 'Medium'),
-    ('Hard', 'Hard'),
-]
+DIFFICULTY_CHOICES = (
+    ('E', 'Easy'),
+    ('M', 'Medium'),
+    ('H', 'Hard'),
+)
 
+# Student Model
 class Student(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
-    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, primary_key=True)
-    student_id_code = models.CharField(max_length=50, unique=True, blank=True, null=True)
-    grade_level = models.CharField(max_length=50, blank=True, null=True)
-    class_name = models.CharField(max_length=50, blank=True, null=True)
-    date_registered = models.DateTimeField(auto_now_add=True)
-    last_device_sync = models.DateTimeField(null=True, blank=True)
-    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True, null=True)
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    gender = models.CharField(max_length=1, choices=GENDER_CHOICES, blank=True)
     date_of_birth = models.DateField(null=True, blank=True)
-    school_name = models.CharField(max_length=255, blank=True, null=True)
+    grade = models.CharField(max_length=50, blank=True)
+    parent_email = models.EmailField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.user.username
 
-class Lesson(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    subject = models.CharField(max_length=100, blank=True, null=True)
-    difficulty_level = models.CharField(max_length=50, choices=DIFFICULTY_CHOICES, default='Medium')
-    version = models.IntegerField(default=1)
+# Teacher Model
+class Teacher(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    subject = models.CharField(max_length=100)
+    institution = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    lesson_file = models.FileField(upload_to='lessons/', blank=True, null=True)
-    prerequisites = models.JSONField(default=list, blank=True, null=True)
+
+    def __str__(self):
+        return self.user.username
+
+# Wallet Model (assuming this is part of your system)
+class Wallet(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+
+    def __str__(self):
+        return f"{self.user.username}'s Wallet"
+
+# Lesson Model
+class Lesson(models.Model):
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='lessons')
+    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return self.title
 
+# Question Model
 class Question(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     lesson = models.ForeignKey(Lesson, on_delete=models.CASCADE, related_name='questions')
     question_text = models.TextField()
-    question_type = models.CharField(max_length=10, choices=QUESTION_TYPE_CHOICES, default='MCQ')
-    options = models.JSONField(default=list, blank=True, null=True, help_text="List of options for MCQ, stored as JSON array.")
-    correct_answer_text = models.CharField(max_length=255)
-    difficulty_level = models.CharField(max_length=50, choices=DIFFICULTY_CHOICES, default='Medium')
-    expected_time_seconds = models.IntegerField(default=60, help_text="Expected time to answer in seconds")
-    ai_generated_feedback = models.TextField(blank=True, null=True)
+    question_type = models.CharField(max_length=3, choices=QUESTION_TYPE_CHOICES, default='MCQ')
+    options = models.JSONField(null=True, blank=True)  # Used for MCQ
+    correct_answer = models.CharField(max_length=255)
+    difficulty = models.CharField(max_length=1, choices=DIFFICULTY_CHOICES, default='E')
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Q: {self.question_text[:50]}..."
+        return self.question_text[:50]
 
+# Quiz Attempt Model
 class QuizAttempt(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
+    uuid = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='quiz_attempts')
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='quiz_attempts')
-    submitted_answer = models.TextField()
-    is_correct = models.BooleanField()
-    score = models.FloatField(default=0.0)
-    ai_feedback_text = models.TextField(blank=True, null=True)
-    raw_ai_response = models.JSONField(default=dict, blank=True, null=True)
-    attempt_timestamp = models.DateTimeField(default=timezone.now)
-    device_id = models.CharField(max_length=255, blank=True, null=True, help_text="ID of the device where the attempt was made.")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='attempts')
+    is_correct = models.BooleanField(default=False)
+    attempted_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"Attempt by {self.student.user.username} on {self.question.question_text[:20]}..."
+        return f"{self.student.user.username}'s attempt on {self.question.lesson.title}"
 
+# Student Progress Model
 class StudentProgress(models.Model):
-    uuid = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, primary_key=True)
-    student = models.OneToOneField(Student, on_delete=models.CASCADE, related_name='progress')
-    overall_progress_data = models.JSONField(default=dict,
-                                             help_text="Aggregated progress data per lesson/topic.")
-    last_updated = models.DateTimeField(auto_now=True,
-                                        help_text="Timestamp when this progress record was last updated on the server.")
-
-    class Meta:
-        verbose_name_plural = "Student Progress"
+    student = models.OneToOneField(Student, on_delete=models.CASCADE, primary_key=True)
+    lessons_completed = models.ManyToManyField(Lesson, related_name='completed_by_students', blank=True)
+    overall_score = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    overall_progress_data = models.JSONField(default=dict, blank=True)
 
     def __str__(self):
-        return f"Progress for {self.student.user.username}"
+        return f"{self.student.user.username}'s Progress"

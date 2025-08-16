@@ -18,14 +18,14 @@ from django.db.models import Prefetch
 # Models
 from .models import (
     User, Student, Teacher, Lesson, Question,
-    QuizAttempt, StudentProgress, Wallet
+    QuizAttempt, StudentProgress
 )
 
 # Serializers
 from .serializers import (
     UserSerializer, AuthSerializer, StudentSerializer, TeacherSerializer,
     LessonSerializer, QuestionSerializer, QuizAttemptSerializer,
-    StudentProgressSerializer, WalletSerializer
+    StudentProgressSerializer
 )
 
 # Permissions
