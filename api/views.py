@@ -14,10 +14,11 @@ from django.db.models import F
 from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.db.models import Prefetch
+from django.contrib.auth import get_user_model
 
 # Models
 from .models import (
-    User, Student, Teacher, Lesson, Question,
+    Student, Teacher, Lesson, Question,
     QuizAttempt, StudentProgress
 )
 
@@ -33,6 +34,8 @@ from .permissions import IsTeacher, IsStudent, IsStudentOrTeacher
 
 # AI Integration
 from .ai_integration import get_quiz_feedback, get_recommendations
+
+User = get_user_model()
 
 class AuthViewSet(viewsets.ViewSet):
     permission_classes = [AllowAny]
