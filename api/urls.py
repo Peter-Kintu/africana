@@ -7,7 +7,7 @@ from .views import (
     QuizAttemptViewSet, StudentProgressViewSet,
     export_quiz_attempts_csv,
     teacher_dashboard_view,
-    ai_quiz_feedback, ai_recommendations,
+    ai_quiz_feedback, ai_recommendations, # AI views - These are correctly named
 )
 
 router = DefaultRouter()
@@ -22,7 +22,10 @@ urlpatterns = [
     path('', include(router.urls)),
     path('quiz-attempts/export-csv/', export_quiz_attempts_csv, name='export-quiz-attempts-csv'),
     path('teacher-dashboard/', teacher_dashboard_view, name='teacher-dashboard'),
+    # AI URLs
     path('ai/quiz-feedback/', ai_quiz_feedback, name='ai-quiz-feedback'),
     path('ai/recommendations/', ai_recommendations, name='ai-recommendations'),
-    path('auth/user/', AuthViewSet.as_view({'get': 'current_user'}), name='auth-current-user'),
+    
+    # CRITICAL FIX: Add this line to explicitly handle the login endpoint
+    path('auth/login/', AuthViewSet.as_view({'post': 'login'}), name='auth-login'),
 ]
