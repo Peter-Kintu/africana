@@ -3,8 +3,8 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    AuthViewSet, StudentViewSet, LessonViewSet, QuestionViewSet,
-    QuizAttemptViewSet, StudentProgressViewSet, TeacherViewSet,
+    AuthViewSet, StudentViewSet, TeacherViewSet, LessonViewSet, QuestionViewSet,
+    QuizAttemptViewSet, StudentProgressViewSet,
     export_quiz_attempts_csv,
     teacher_dashboard_view,
     ai_quiz_feedback, ai_recommendations,
@@ -26,7 +26,4 @@ urlpatterns = [
     # AI URLs
     path('ai/quiz-feedback/', ai_quiz_feedback, name='ai-quiz-feedback'),
     path('ai/recommendations/', ai_recommendations, name='ai-recommendations'),
-    
-    # CRITICAL FIX: Add this line to explicitly handle the login endpoint
-    path('auth/login/', AuthViewSet.as_view({'post': 'login'}), name='auth-login'),
 ]
