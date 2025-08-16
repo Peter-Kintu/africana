@@ -57,7 +57,7 @@ class StudentProgressViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
 
 @login_required
-def teacher_dashboard_view(request):
+def teacher_dashboard(request):
     """
     Render the teacher's dashboard page.
     """
