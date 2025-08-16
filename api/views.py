@@ -107,7 +107,7 @@ class StudentViewSet(viewsets.ModelViewSet):
     permission_classes = [IsTeacher]
 
 class LessonViewSet(viewsets.ModelViewSet):
-    queryset = Lesson.objects.all().order_by('id')
+    queryset = Lesson.objects.all().order_by('uuid')
     serializer_class = LessonSerializer
     permission_classes = [IsStudentOrTeacher]
 
