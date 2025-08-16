@@ -8,6 +8,7 @@ from .views import (
     export_quiz_attempts_csv,
     teacher_dashboard_view,
     ai_quiz_feedback, ai_recommendations,
+    teacher_books, publish_book, video_page, add_video, home
 )
 
 router = DefaultRouter()
@@ -19,10 +20,19 @@ router.register(r'quiz-attempts', QuizAttemptViewSet, basename='quiz-attempt')
 router.register(r'student-progress', StudentProgressViewSet, basename='student-progress')
 
 urlpatterns = [
+    # API endpoints
     path('', include(router.urls)),
     path('quiz-attempts/export-csv/', export_quiz_attempts_csv, name='export-quiz-attempts-csv'),
-    path('teacher-dashboard/', teacher_dashboard_view, name='teacher-dashboard'),
+    
     # AI URLs
     path('ai/quiz-feedback/', ai_quiz_feedback, name='ai-quiz-feedback'),
     path('ai/recommendations/', ai_recommendations, name='ai-recommendations'),
+
+    # Custom views for the web platform
+    path('teacher-dashboard/', teacher_dashboard_view, name='teacher-dashboard'),
+    path('teacher-books/', teacher_books, name='teacher_books'),
+    path('publish-book/', publish_book, name='publish_book'),
+    path('video-page/', video_page, name='video_page'),
+    path('add-video/', add_video, name='add_video'),
+    path('', home, name='home'),
 ]

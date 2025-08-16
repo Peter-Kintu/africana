@@ -1,227 +1,130 @@
 # learnflow_ai/django_backend/api/views.py
 
-from rest_framework import viewsets, status
-from rest_framework.response import Response
-from rest_framework.decorators import api_view, action, permission_classes
-from rest_framework.permissions import IsAuthenticated, AllowAny
-from rest_framework.authtoken.models import Token
-from django.db import IntegrityError
-from django.contrib.auth import authenticate
-from django.shortcuts import get_object_or_404
-from django.http import HttpResponse
-import csv
-from django.db.models import F
-from django.db import transaction
-from django.core.exceptions import ValidationError
-from django.db.models import Prefetch
-from django.contrib.auth import get_user_model
-
-# Models
-from .models import (
-    Student, Teacher, Lesson, Question,
-    QuizAttempt, StudentProgress
-)
-
-# Serializers
-from .serializers import (
-    UserSerializer, AuthSerializer, StudentSerializer, TeacherSerializer,
-    LessonSerializer, QuestionSerializer, QuizAttemptSerializer,
-    StudentProgressSerializer
-)
-
-# Permissions
-from .permissions import IsTeacher, IsStudent, IsStudentOrTeacher
-
-# AI Integration
-from .ai_integration import get_quiz_feedback, get_recommendations
-
-User = get_user_model()
-
-class AuthViewSet(viewsets.ViewSet):
-    permission_classes = [AllowAny]
-
-    @action(detail=False, methods=['post'])
-    def login(self, request):
-        username = request.data.get('username')
-        password = request.data.get('password')
-        user = authenticate(username=username, password=password)
-        if user is not None:
-            token, created = Token.objects.get_or_create(user=user)
-            serializer = AuthSerializer(user)
-            return Response({'token': token.key, 'user': serializer.data})
-        else:
-            return Response({'detail': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-
-    @action(detail=False, methods=['post'])
-    def register(self, request):
-        try:
-            with transaction.atomic():
-                user_data = request.data
-                user_type = user_data.get('user_type', 'student').lower()
-
-                serializer = UserSerializer(data=user_data)
-                serializer.is_valid(raise_exception=True)
-                user = serializer.save()
-
-                if user_type == 'student':
-                    student_data = {
-                        'user': user.id,
-                        'student_id_code': user_data.get('student_id_code'),
-                        'gender': user_data.get('gender')
-                    }
-                    student_serializer = StudentSerializer(data=student_data)
-                    student_serializer.is_valid(raise_exception=True)
-                    student_serializer.save()
-                elif user_type == 'teacher':
-                    teacher_data = {
-                        'user': user.id,
-                        'school_id_code': user_data.get('school_id_code'),
-                        'title': user_data.get('title')
-                    }
-                    teacher_serializer = TeacherSerializer(data=teacher_data)
-                    teacher_serializer.is_valid(raise_exception=True)
-                    teacher_serializer.save()
-
-                token = Token.objects.create(user=user)
-                response_serializer = AuthSerializer(user)
-                return Response({'token': token.key, 'user': response_serializer.data}, status=status.HTTP_201_CREATED)
-
-        except IntegrityError:
-            return Response({'detail': 'A user with that username or email already exists'}, status=status.HTTP_400_BAD_REQUEST)
-        except ValidationError as e:
-            return Response({'detail': e.message_dict}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception as e:
-            return Response({'detail': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-    @action(detail=False, methods=['get'])
-    def user(self, request):
-        if request.user.is_authenticated:
-            serializer = AuthSerializer(request.user)
-            return Response(serializer.data)
-        else:
-            return Response({'detail': 'Authentication credentials were not provided.'}, status=status.HTTP_401_UNAUTHORIZED)
+from rest_framework import viewsets
+from rest_framework import permissions
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher, Book, Video
+from .serializers import StudentSerializer, LessonSerializer, QuestionSerializer, QuizAttemptSerializer, StudentProgressSerializer
 
 class StudentViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows students to be viewed or edited.
+    """
     queryset = Student.objects.all()
     serializer_class = StudentSerializer
-    permission_classes = [IsTeacher]
+    permission_classes = [permissions.IsAuthenticated]
 
 class LessonViewSet(viewsets.ModelViewSet):
-    queryset = Lesson.objects.all().order_by('uuid')
+    """
+    API endpoint that allows lessons to be viewed or edited.
+    """
+    queryset = Lesson.objects.all()
     serializer_class = LessonSerializer
-    permission_classes = [IsStudentOrTeacher]
+    permission_classes = [permissions.IsAuthenticated]
 
 class QuestionViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows questions to be viewed or edited.
+    """
     queryset = Question.objects.all()
     serializer_class = QuestionSerializer
-    permission_classes = [IsTeacher]
+    permission_classes = [permissions.IsAuthenticated]
 
 class QuizAttemptViewSet(viewsets.ModelViewSet):
-    queryset = QuizAttempt.objects.all().order_by('-attempted_at')
+    """
+    API endpoint that allows quiz attempts to be viewed or edited.
+    """
+    queryset = QuizAttempt.objects.all()
     serializer_class = QuizAttemptSerializer
-    permission_classes = [IsStudentOrTeacher]
-
-    def get_queryset(self):
-        user = self.request.user
-        if hasattr(user, 'student'):
-            return QuizAttempt.objects.filter(student=user.student).order_by('-attempted_at')
-        return super().get_queryset()
-
-    @action(detail=True, methods=['post'], permission_classes=[IsStudent])
-    def submit_answer(self, request, pk=None):
-        quiz_attempt = get_object_or_404(QuizAttempt, pk=pk, student=request.user.student)
-        question_id = request.data.get('question_id')
-        answer = request.data.get('answer')
-
-        question = get_object_or_404(Question, pk=question_id)
-        is_correct = (answer == question.correct_answer)
-
-        quiz_attempt.score = F('score') + (1 if is_correct else 0)
-        quiz_attempt.save(update_fields=['score'])
-
-        StudentProgress.objects.update_or_create(
-            student=request.user.student,
-            lesson=quiz_attempt.lesson,
-            defaults={'score': F('score') + (1 if is_correct else 0), 'attempts': F('attempts') + 1}
-        )
-
-        return Response({'is_correct': is_correct, 'correct_answer': question.correct_answer})
+    permission_classes = [permissions.IsAuthenticated]
 
 class StudentProgressViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows student progress to be viewed or edited.
+    """
     queryset = StudentProgress.objects.all()
     serializer_class = StudentProgressSerializer
-    permission_classes = [IsStudentOrTeacher]
+    permission_classes = [permissions.IsAuthenticated]
 
-    def get_queryset(self):
-        user = self.request.user
-        if hasattr(user, 'student'):
-            return StudentProgress.objects.filter(student=user.student)
-        return super().get_queryset()
+@login_required
+def teacher_dashboard(request):
+    """
+    Render the teacher's dashboard page.
+    """
+    return render(request, 'teacher_dashboard.html')
 
-# Utility functions
-@api_view(['GET'])
-@permission_classes([IsTeacher])
-def export_quiz_attempts_csv(request):
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="quiz_attempts.csv"'
+# New views for the book store and video library
+@login_required
+def teacher_books(request):
+    """
+    Render the teacher's book publishing page.
+    """
+    # Assuming the logged-in user is a Teacher
+    teacher = Teacher.objects.get(user=request.user)
+    books = Book.objects.filter(teacher=teacher).order_by('-published_date')
+    context = {
+        'books': books
+    }
+    return render(request, 'teacher_books.html', context)
 
-    writer = csv.writer(response)
-    writer.writerow(['Student', 'Lesson', 'Score', 'Attempted At'])
+@login_required
+def publish_book(request):
+    """
+    Handle the form submission for publishing a new book.
+    """
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        price = request.POST.get('price')
+        cover_image = request.FILES.get('cover_image')
+        teacher = Teacher.objects.get(user=request.user)
 
-    quiz_attempts = QuizAttempt.objects.all().select_related('student__user', 'lesson')
-    for attempt in quiz_attempts:
-        writer.writerow([
-            attempt.student.user.username,
-            attempt.lesson.title,
-            attempt.score,
-            attempt.attempted_at
-        ])
+        Book.objects.create(
+            title=title,
+            description=description,
+            price=price,
+            cover_image=cover_image,
+            teacher=teacher
+        )
+        return redirect('teacher_books')
+    return redirect('teacher_books')
 
-    return response
+@login_required
+def video_page(request):
+    """
+    Render the video upload and library page.
+    """
+    teacher = Teacher.objects.get(user=request.user)
+    videos = Video.objects.filter(teacher=teacher).order_by('-created_at')
+    context = {
+        'videos': videos
+    }
+    return render(request, 'video_page.html', context)
 
-@api_view(['GET'])
-@permission_classes([IsTeacher])
-def teacher_dashboard_view(request):
-    total_students = Student.objects.count()
-    total_lessons = Lesson.objects.count()
-    total_quiz_attempts = QuizAttempt.objects.count()
+@login_required
+def add_video(request):
+    """
+    Handle the form submission for adding a new video.
+    """
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        description = request.POST.get('description')
+        video_file = request.FILES.get('video_file')
+        teacher = Teacher.objects.get(user=request.user)
 
-    return Response({
-        'total_students': total_students,
-        'total_lessons': total_lessons,
-        'total_quiz_attempts': total_quiz_attempts
-    })
+        Video.objects.create(
+            title=title,
+            description=description,
+            video_file=video_file,
+            teacher=teacher
+        )
+        return redirect('video_page')
+    return redirect('video_page')
 
-# AI Endpoints
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def ai_quiz_feedback(request):
-    try:
-        user_answer = request.data.get('user_answer')
-        correct_answer = request.data.get('correct_answer')
-        question_text = request.data.get('question_text')
-
-        if not all([user_answer, correct_answer, question_text]):
-            return Response({'error': 'Missing required fields'}, status=status.HTTP_400_BAD_REQUEST)
-
-        feedback = get_quiz_feedback(question_text, user_answer, correct_answer)
-        return Response({'feedback': feedback})
-
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def ai_recommendations(request):
-    try:
-        user_id = request.user.id
-        student_progress = StudentProgress.objects.filter(student__user_id=user_id).select_related('lesson').order_by('-score')[:5]
-
-        # Use prefetch_related for efficient fetching of related questions
-        lessons = Lesson.objects.all().prefetch_related(Prefetch('questions', queryset=Question.objects.all()))
-
-        recommendations = get_recommendations(student_progress, lessons)
-        return Response({'recommendations': recommendations})
-
-    except Exception as e:
-        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+# I've added a placeholder view for the home page.
+def home(request):
+    """
+    Placeholder home view.
+    """
+    return render(request, 'home.html')
