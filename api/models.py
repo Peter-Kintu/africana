@@ -6,7 +6,20 @@ import uuid
 
 # Custom User Model
 class User(AbstractUser):
-    pass
+    groups = models.ManyToManyField(
+        'auth.Group',
+        related_name='api_user_groups',
+        blank=True,
+        help_text='The groups this user belongs to. A user will get all permissions granted to each of their groups.',
+        verbose_name='groups',
+    )
+    user_permissions = models.ManyToManyField(
+        'auth.Permission',
+        related_name='api_user_permissions',
+        blank=True,
+        help_text='Specific permissions for this user.',
+        verbose_name='user permissions',
+    )
 
 # Gender and Question Type Choices
 GENDER_CHOICES = (

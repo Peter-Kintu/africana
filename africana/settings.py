@@ -1,5 +1,3 @@
-# learnflow_ai/django_backend/django_backend/settings.py
-
 import os
 from pathlib import Path
 import json

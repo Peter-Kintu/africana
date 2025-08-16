@@ -6,43 +6,60 @@ import json
 import csv
 from django.http import HttpResponse
 
-from .models import Student, Lesson, Question, QuizAttempt, StudentProgress
+from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher, Wallet
+
+# You may need to create a forms.py file with QuestionAdminForm if it doesn't exist.
 from .forms import QuestionAdminForm
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('user', 'student_id_code', 'grade_level', 'class_name', 'date_registered', 'last_device_sync')
-    search_fields = ('user__username', 'student_id_code', 'grade_level', 'class_name')
-    list_filter = ('grade_level', 'class_name', 'gender')
+    list_display = ('user', 'gender', 'grade', 'parent_email', 'created_at', 'updated_at')
+    search_fields = ('user__username', 'gender', 'grade', 'parent_email')
+    list_filter = ('gender', 'grade')
+    raw_id_fields = ('user',)
+
+@admin.register(Teacher)
+class TeacherAdmin(admin.ModelAdmin):
+    list_display = ('user', 'subject', 'institution', 'created_at', 'updated_at')
+    search_fields = ('user__username', 'subject', 'institution')
+    list_filter = ('subject', 'institution')
+    raw_id_fields = ('user',)
+
+@admin.register(Wallet)
+class WalletAdmin(admin.ModelAdmin):
+    list_display = ('user', 'balance')
+    search_fields = ('user__username',)
     raw_id_fields = ('user',)
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
-    list_display = ('title', 'subject', 'difficulty_level', 'version', 'created_at', 'updated_at')
-    search_fields = ('title', 'description', 'subject')
-    list_filter = ('subject', 'difficulty_level', 'version')
+    list_display = ('title', 'teacher', 'created_at')
+    search_fields = ('title', 'description', 'teacher__user__username')
+    list_filter = ('teacher',)
+    raw_id_fields = ('teacher',)
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     form = QuestionAdminForm
-    list_display = ('question_text', 'question_type', 'lesson', 'difficulty_level', 'created_at')
+    list_display = ('question_text', 'question_type', 'lesson', 'difficulty', 'created_at')
     search_fields = ('question_text', 'lesson__title')
-    list_filter = ('question_type', 'difficulty_level', 'lesson')
+    list_filter = ('question_type', 'difficulty', 'lesson')
     raw_id_fields = ('lesson',)
 
 @admin.register(QuizAttempt)
 class QuizAttemptAdmin(admin.ModelAdmin):
-    list_display = ('student', 'question', 'is_correct', 'score', 'attempt_timestamp')
-    list_filter = ('is_correct', 'attempt_timestamp', 'student__grade_level', 'student__class_name', 'question__lesson__subject')
-    search_fields = ('student__user__username', 'question__question_text', 'submitted_answer')
+    list_display = ('student', 'question', 'is_correct', 'attempted_at')
+    list_filter = ('is_correct', 'attempted_at', 'student__grade', 'question__lesson__title')
+    search_fields = ('student__user__username', 'question__question_text')
     raw_id_fields = ('student', 'question')
+    date_hierarchy = 'attempted_at'
 
 @admin.register(StudentProgress)
 class StudentProgressAdmin(admin.ModelAdmin):
-    list_display = ('student', 'formatted_overall_progress', 'last_updated')
+    list_display = ('student', 'overall_score', 'overall_progress_data')
     search_fields = ('student__user__username',)
     raw_id_fields = ('student',)
-    
+
     def formatted_overall_progress(self, obj):
         progress_data = obj.overall_progress_data
         if not progress_data:
@@ -63,7 +80,7 @@ class StudentProgressAdmin(admin.ModelAdmin):
             display_uuid = lesson_uuid[:8] + "..." if len(lesson_uuid) > 8 else lesson_uuid
             
             html += f"<tr><td>{display_uuid}</td><td>{status}</td><td>{score_avg}</td><td>{last_attempt_date}</td></tr>"
-        
+    
         html += "</table>"
         return format_html(html)
 
