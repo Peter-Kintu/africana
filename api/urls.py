@@ -3,7 +3,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    AuthViewSet, StudentViewSet, TeacherViewSet, LessonViewSet, QuestionViewSet,
+    AuthViewSet, StudentViewSet, LessonViewSet, QuestionViewSet,
     QuizAttemptViewSet, StudentProgressViewSet,
     export_quiz_attempts_csv,
     teacher_dashboard_view,
