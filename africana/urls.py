@@ -11,7 +11,7 @@ from api.views import teacher_dashboard_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('api.urls')),
+    path('api/v1/', include('api.urls')),
     path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
     path('accounts/', include('django.contrib.auth.urls')),
     path('teacher-dashboard/', teacher_dashboard_view, name='teacher-dashboard'),
