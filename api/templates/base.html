@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}LearnFlow AI Platform{% endblock %}</title>
+    <style>
+        :root {
+            --primary-color: #6a1b9a; /* Deep Purple */
+            --secondary-color: #ba68c8; /* Lighter Purple */
+            --background-color: #121212; /* Dark Gray */
+            --card-background: #1e1e1e; /* Slightly Lighter Dark Gray */
+            --text-color: #e0e0e0; /* Off-White */
+            --accent-color: #81c784; /* Green for success */
+            --border-color: #333;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background-color: var(--card-background);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .navbar a {
+            color: var(--text-color);
+            text-decoration: none;
+            font-size: 1.1rem;
+            margin-left: 1.5rem;
+            transition: color 0.3s ease;
+        }
+
+        .navbar a:hover {
+            color: var(--primary-color);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .content {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background-color: var(--card-background);
+            border-radius: 8px;
+            padding: 2rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            border: 1px solid var(--border-color);
+            margin-bottom: 2rem;
+        }
+
+        h1, h2, h3 {
+            color: var(--primary-color);
+        }
+
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background-color: #5d1685;
+        }
+
+        input[type="text"],
+        input[type="url"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--border-color);
+            background-color: #2a2a2a;
+            color: var(--text-color);
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="logo">LearnFlow AI</div>
+        <div>
+            <a href="{% url 'home' %}">Home</a>
+            <a href="{% url 'teacher_books' %}">Books</a>
+            <a href="{% url 'video_page' %}">Videos</a>
+            <a href="{% url 'teacher_dashboard' %}">Dashboard</a>
+            <a href="{% url 'logout' %}">Logout</a>
+        </div>
+    </nav>
+    <div class="content">
+        {% block content %}
+        {% endblock %}
+    </div>
+</body>
+</html>

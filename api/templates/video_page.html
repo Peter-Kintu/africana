@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+
+{% block title %}Lesson Videos{% endblock %}
+
+{% block content %}
+    <h1>Add a New Lesson Video</h1>
+    <div class="card">
+        <form action="{% url 'add_video' %}" method="post">
+            {% csrf_token %}
+            <label for="title">Video Title:</label>
+            <input type="text" id="title" name="title" required>
+
+            <label for="url">YouTube Video URL:</label>
+            <input type="url" id="url" name="url" placeholder="e.g., https://www.youtube.com/watch?v=dQw4w9WgXcQ" required>
+
+            <label for="description">Description:</label>
+            <textarea id="description" name="description" rows="4"></textarea>
+
+            <button type="submit" class="btn">Add Video</button>
+        </form>
+    </div>
+
+    <h2>Video Library</h2>
+    <div class="card">
+        {% if videos %}
+            {% for video in videos %}
+                <div class="video-item">
+                    <h3>{{ video.title }}</h3>
+                    <div class="video-container">
+                        <iframe width="560" height="315" src="https://www.youtube.com/embed/{{ video.youtube_id }}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                    </div>
+                    <p>{{ video.description }}</p>
+                    <hr style="border-color: var(--border-color);">
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>No videos have been added yet.</p>
+        {% endif %}
+    </div>
+
+    <style>
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 Aspect Ratio */
+            height: 0;
+            overflow: hidden;
+            max-width: 100%;
+            background: var(--border-color);
+            margin-top: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+{% endblock %}
