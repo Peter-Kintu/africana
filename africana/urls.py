@@ -1,22 +1,15 @@
+# africana/urls.py
+
 from django.contrib import admin
 from django.urls import path, include
-from rest_framework.authtoken.views import obtain_auth_token
-from django.conf import settings
-# from django.conf.urls.static import static # REMOVED: No longer needed with WhiteNoise
-
-# Corrected: Import 'teacher_dashboard' instead of 'teacher_dashboard_view'
-from api.views import teacher_dashboard
+from api.views import home  # Make sure this import matches your file structure
+from rest_framework.authtoken import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/v1/', include('api.urls')),
-    path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
+    path('api-token-auth/', views.obtain_auth_token),
     path('accounts/', include('django.contrib.auth.urls')),
-    path('teacher-dashboard/', teacher_dashboard, name='teacher-dashboard'),
+    path('teacher-dashboard/', include('api.urls')),
+    path('', home, name='home'),  # This line will connect the root URL to your home view
 ]
-
-# IMPORTANT: DO NOT serve static files directly in production via Django/Gunicorn
-# when using WhiteNoise. WhiteNoiseMiddleware handles this.
-# if not settings.DEBUG:
-#     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
-#     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
