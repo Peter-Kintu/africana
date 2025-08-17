@@ -1,12 +1,10 @@
-# learnflow_ai/django_backend/api/admin.py
-
 from django.contrib import admin
 from django.utils.html import format_html
 import json
 import csv
 from django.http import HttpResponse
 
-from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher
+from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher, Book, Video
 
 # You may need to create a forms.py file with QuestionAdminForm if it doesn't exist.
 from .forms import QuestionAdminForm
@@ -23,7 +21,6 @@ class TeacherAdmin(admin.ModelAdmin):
     list_display = ('user', 'subject', 'institution', 'created_at', 'updated_at')
     search_fields = ('user__username', 'subject', 'institution')
     list_filter = ('subject', 'institution')
-    raw_id_fields = ('user',)
 
 
 @admin.register(Lesson)
