@@ -61,7 +61,7 @@ def teacher_dashboard(request):
     """
     Render the teacher's dashboard page.
     """
-    return render(request, 'teacher_dashboard.html')
+    return render(request, 'api/teacher_dashboard.html')
 
 # New views for the book store and video library
 @login_required
@@ -75,7 +75,7 @@ def teacher_books(request):
     context = {
         'books': books
     }
-    return render(request, 'teacher_books.html', context)
+    return render(request, 'api/teacher_books.html', context)
 
 @login_required
 def publish_book(request):
@@ -109,7 +109,7 @@ def video_page(request):
     context = {
         'videos': videos
     }
-    return render(request, 'video_page.html', context)
+    return render(request, 'api/video_page.html', context)
 
 @login_required
 def add_video(request):
@@ -136,7 +136,7 @@ def home(request):
     """
     Placeholder home view.
     """
-    return render(request, 'home.html')
+    return render(request, 'api/base.html')
 
 # Placeholder functions for the AI and CSV export endpoints
 @api_view(['POST'])
