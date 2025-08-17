@@ -9,6 +9,7 @@ from .serializers import StudentSerializer, LessonSerializer, QuestionSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
+from django.shortcuts import get_object_or_404
 
 # Placeholder for a viewset to handle user authentication, as imported in urls.py
 class AuthViewSet(viewsets.ViewSet):
@@ -69,8 +70,8 @@ def teacher_books(request):
     """
     Render the teacher's book publishing page.
     """
-    # Assuming the logged-in user is a Teacher
-    teacher = Teacher.objects.get(user=request.user)
+    # Use get_object_or_404 to handle cases where no Teacher object is found for the user
+    teacher = get_object_or_404(Teacher, user=request.user.pk)
     books = Book.objects.filter(teacher=teacher).order_by('-published_date')
     context = {
         'books': books
@@ -87,7 +88,8 @@ def publish_book(request):
         description = request.POST.get('description')
         price = request.POST.get('price')
         cover_image = request.FILES.get('cover_image')
-        teacher = Teacher.objects.get(user=request.user)
+        # Use get_object_or_404 with the user's primary key
+        teacher = get_object_or_404(Teacher, user=request.user.pk)
 
         Book.objects.create(
             title=title,
@@ -104,7 +106,8 @@ def video_page(request):
     """
     Render the video upload and library page.
     """
-    teacher = Teacher.objects.get(user=request.user)
+    # Use get_object_or_404 with the user's primary key
+    teacher = get_object_or_404(Teacher, user=request.user.pk)
     videos = Video.objects.filter(teacher=teacher).order_by('-created_at')
     context = {
         'videos': videos
@@ -120,7 +123,8 @@ def add_video(request):
         title = request.POST.get('title')
         description = request.POST.get('description')
         video_file = request.FILES.get('video_file')
-        teacher = Teacher.objects.get(user=request.user)
+        # Use get_object_or_404 with the user's primary key
+        teacher = get_object_or_404(Teacher, user=request.user.pk)
 
         Video.objects.create(
             title=title,
