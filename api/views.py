@@ -16,8 +16,8 @@ def get_teacher_for_user(user):
     If no Teacher instance exists, it creates a new one with defaults and returns it.
     """
     teacher, created = Teacher.objects.get_or_create(
-        user=user,
-        defaults={'subject': 'General', 'institution': 'Default Institution'}
+        user__username=user.username,
+        defaults={'user': user, 'subject': 'General', 'institution': 'Default Institution'}
     )
     return teacher
 
