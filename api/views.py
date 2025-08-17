@@ -2,7 +2,6 @@ from rest_framework import viewsets
 from rest_framework import permissions
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import get_user_model
 from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher, Book, Video
 from .serializers import StudentSerializer, LessonSerializer, QuestionSerializer, QuizAttemptSerializer, StudentProgressSerializer
 from rest_framework.response import Response
@@ -10,21 +9,20 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 import re  # Import the regular expression module
 
-User = get_user_model()
-
 # Helper function to get or create a Teacher instance
 def get_teacher_for_user(user):
     """
     Retrieves the Teacher instance for a given user.
     If no Teacher instance exists, it creates a new one with defaults and returns it.
     """
-    # Get the actual User object from the database, not the lazy object
-    actual_user = User.objects.get(pk=user.pk)
-    
-    teacher, created = Teacher.objects.get_or_create(
-        user=actual_user,
-        defaults={'subject': 'General', 'institution': 'Default Institution'}
-    )
+    try:
+        teacher = Teacher.objects.get(user=user)
+    except Teacher.DoesNotExist:
+        teacher = Teacher.objects.create(
+            user=user,
+            subject='General',
+            institution='Default Institution'
+        )
     return teacher
 
 # Placeholder for a viewset to handle user authentication, as imported in urls.py
