@@ -6,7 +6,7 @@ import json
 import csv
 from django.http import HttpResponse
 
-from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher, Wallet
+from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher
 
 # You may need to create a forms.py file with QuestionAdminForm if it doesn't exist.
 from .forms import QuestionAdminForm
