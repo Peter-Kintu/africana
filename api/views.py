@@ -1,5 +1,3 @@
-# learnflow_ai/django_backend/api/views.py
-
 from rest_framework import viewsets
 from rest_framework import permissions
 from django.shortcuts import render, redirect
@@ -10,6 +8,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
 from django.shortcuts import get_object_or_404
+import re  # Import the regular expression module
 
 # Placeholder for a viewset to handle user authentication, as imported in urls.py
 class AuthViewSet(viewsets.ViewSet):
@@ -71,7 +70,7 @@ def teacher_books(request):
     Render the teacher's book publishing page.
     """
     # Use get_object_or_404 to handle cases where no Teacher object is found for the user
-    teacher = get_object_or_404(Teacher, user=request.user.pk)
+    teacher = get_object_or_404(Teacher, user=request.user)
     books = Book.objects.filter(teacher=teacher).order_by('-published_date')
     context = {
         'books': books
@@ -88,8 +87,8 @@ def publish_book(request):
         description = request.POST.get('description')
         price = request.POST.get('price')
         cover_image = request.FILES.get('cover_image')
-        # Use get_object_or_404 with the user's primary key
-        teacher = get_object_or_404(Teacher, user=request.user.pk)
+        # Use get_object_or_404 with the user
+        teacher = get_object_or_404(Teacher, user=request.user)
 
         Book.objects.create(
             title=title,
@@ -106,8 +105,8 @@ def video_page(request):
     """
     Render the video upload and library page.
     """
-    # Use get_object_or_404 with the user's primary key
-    teacher = get_object_or_404(Teacher, user=request.user.pk)
+    # Use get_object_or_404 with the user
+    teacher = get_object_or_404(Teacher, user=request.user)
     videos = Video.objects.filter(teacher=teacher).order_by('-created_at')
     context = {
         'videos': videos
@@ -121,19 +120,27 @@ def add_video(request):
     """
     if request.method == 'POST':
         title = request.POST.get('title')
+        url = request.POST.get('url')
         description = request.POST.get('description')
-        video_file = request.FILES.get('video_file')
-        # Use get_object_or_404 with the user's primary key
-        teacher = get_object_or_404(Teacher, user=request.user.pk)
+        
+        # Extracts the YouTube video ID from the URL using a regular expression
+        youtube_id_match = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/)([^&]+)', url)
+        youtube_id = youtube_id_match.group(1) if youtube_id_match else None
 
-        Video.objects.create(
-            title=title,
-            description=description,
-            video_file=video_file,
-            teacher=teacher
-        )
+        # Use get_object_or_404 with the user
+        teacher = get_object_or_404(Teacher, user=request.user)
+        
+        if youtube_id:
+            Video.objects.create(
+                title=title,
+                url=url,
+                description=description,
+                youtube_id=youtube_id,
+                teacher=teacher
+            )
         return redirect('video_page')
     return redirect('video_page')
+
 
 # I've added a placeholder view for the home page.
 def home(request):
