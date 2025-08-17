@@ -1,6 +1,6 @@
 from django import forms
 import json
-from .models import Question, Teacher, User
+from .models import Question, Student, Teacher, User
 
 class QuestionAdminForm(forms.ModelForm):
     # Define individual CharFields for each MCQ option
@@ -16,7 +16,6 @@ class QuestionAdminForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.options:
-            # Ensure options_list is a list, even if self.instance.options is None
             options_list = json.loads(self.instance.options) if self.instance.options else []
             self.initial['option_a'] = options_list[0] if len(options_list) > 0 else ''
             self.initial['option_b'] = options_list[1] if len(options_list) > 1 else ''
@@ -31,9 +30,7 @@ class QuestionAdminForm(forms.ModelForm):
             cleaned_data.get('option_c'),
             cleaned_data.get('option_d'),
         ]
-        # Filter out empty strings/None values and save as a JSON string
         cleaned_options = [opt for opt in options if opt]
-        # Re-assign the cleaned options to the 'options' field of the model instance
         self.instance.options = json.dumps(cleaned_options)
         return cleaned_data
 
@@ -44,5 +41,17 @@ class TeacherAdminForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Explicitly set the queryset for the 'user' field
-        self.fields['user'].queryset = User.objects.all()
+        # Exclude users who are already linked to a Teacher or Student
+        used_users = list(Teacher.objects.values_list('user_id', flat=True)) + list(Student.objects.values_list('user_id', flat=True))
+        self.fields['user'].queryset = User.objects.exclude(id__in=used_users)
+
+class StudentAdminForm(forms.ModelForm):
+    class Meta:
+        model = Student
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Exclude users who are already linked to a Teacher or Student
+        used_users = list(Teacher.objects.values_list('user_id', flat=True)) + list(Student.objects.values_list('user_id', flat=True))
+        self.fields['user'].queryset = User.objects.exclude(id__in=used_users)

@@ -5,15 +5,17 @@ import csv
 from django.http import HttpResponse
 
 from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher, Book, Video
-# Import both QuestionAdminForm and TeacherAdminForm
-from .forms import QuestionAdminForm, TeacherAdminForm 
+# Import all three custom forms
+from .forms import QuestionAdminForm, TeacherAdminForm, StudentAdminForm
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
+    form = StudentAdminForm  # Use the custom form
     list_display = ('user', 'gender', 'grade', 'parent_email', 'created_at', 'updated_at')
     search_fields = ('user__username', 'gender', 'grade', 'parent_email')
     list_filter = ('gender', 'grade')
-    raw_id_fields = ('user',)
+    # The form now handles the dropdown, so raw_id_fields is not needed here
+    # raw_id_fields = ('user',)
 
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
@@ -21,6 +23,7 @@ class TeacherAdmin(admin.ModelAdmin):
     list_display = ('user', 'subject', 'institution', 'created_at', 'updated_at')
     search_fields = ('user__username', 'subject', 'institution')
     list_filter = ('subject', 'institution')
+    # The form now handles the dropdown, so raw_id_fields is not needed here
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
