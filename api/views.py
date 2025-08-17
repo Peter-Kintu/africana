@@ -13,9 +13,12 @@ import re  # Import the regular expression module
 def get_teacher_for_user(user):
     """
     Retrieves the Teacher instance for a given user.
-    If no Teacher instance exists, it creates a new one and returns it.
+    If no Teacher instance exists, it creates a new one with defaults and returns it.
     """
-    teacher, created = Teacher.objects.get_or_create(user=user)
+    teacher, created = Teacher.objects.get_or_create(
+        user=user,
+        defaults={'subject': 'General', 'institution': 'Default Institution'}
+    )
     return teacher
 
 # Placeholder for a viewset to handle user authentication, as imported in urls.py
