@@ -5,25 +5,53 @@ import csv
 from django.http import HttpResponse
 
 from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher, Book, Video
-# Import all three custom forms
 from .forms import QuestionAdminForm, TeacherAdminForm, StudentAdminForm
+
+# Inlines for related models
+class QuizAttemptInline(admin.TabularInline):
+    model = QuizAttempt
+    extra = 0
+    raw_id_fields = ('question',)
+    readonly_fields = ('is_correct', 'attempted_at')
+
+# Admin Actions
+@admin.action(description="Export selected progress as CSV")
+def export_progress_csv(modeladmin, request, queryset):
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename=student_progress.csv'
+    writer = csv.writer(response)
+    writer.writerow(['Student', 'Overall Score', 'Lesson UUID', 'Status', 'Score Avg', 'Last Attempt'])
+
+    for progress in queryset:
+        student = progress.student.user.username
+        score = progress.overall_score
+        data = progress.overall_progress_data or {}
+        for lesson_uuid, details in data.items():
+            if isinstance(details, dict):
+                writer.writerow([
+                    student,
+                    score,
+                    lesson_uuid,
+                    details.get('status', 'N/A'),
+                    details.get('score_avg', 'N/A'),
+                    details.get('last_attempt_date', 'N/A')
+                ])
+    return response
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    form = StudentAdminForm  # Use the custom form
+    form = StudentAdminForm
     list_display = ('user', 'gender', 'grade', 'parent_email', 'created_at', 'updated_at')
     search_fields = ('user__username', 'gender', 'grade', 'parent_email')
     list_filter = ('gender', 'grade')
-    # The form now handles the dropdown, so raw_id_fields is not needed here
-    # raw_id_fields = ('user',)
+    inlines = [QuizAttemptInline]  # Add the inline model here
 
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
-    form = TeacherAdminForm  # Use the custom form
+    form = TeacherAdminForm
     list_display = ('user', 'subject', 'institution', 'created_at', 'updated_at')
     search_fields = ('user__username', 'subject', 'institution')
     list_filter = ('subject', 'institution')
-    # The form now handles the dropdown, so raw_id_fields is not needed here
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
@@ -50,9 +78,10 @@ class QuizAttemptAdmin(admin.ModelAdmin):
 
 @admin.register(StudentProgress)
 class StudentProgressAdmin(admin.ModelAdmin):
-    list_display = ('student', 'overall_score', 'overall_progress_data')
+    list_display = ('student', 'overall_score', 'formatted_overall_progress')
     search_fields = ('student__user__username',)
     raw_id_fields = ('student',)
+    actions = [export_progress_csv]  # Add the custom action here
 
     def formatted_overall_progress(self, obj):
         progress_data = obj.overall_progress_data
