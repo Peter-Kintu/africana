@@ -57,6 +57,7 @@ class Teacher(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     subject = models.CharField(max_length=100)
     institution = models.CharField(max_length=100)
+    temp_field = models.CharField(max_length=10, blank=True, null=True) # TEMPORARY LINE
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
