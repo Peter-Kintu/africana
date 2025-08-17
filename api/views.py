@@ -70,7 +70,7 @@ def teacher_books(request):
     Render the teacher's book publishing page.
     """
     # Use get_object_or_404 to handle cases where no Teacher object is found for the user
-    teacher = get_object_or_404(Teacher, user=request.user)
+    teacher = get_object_or_404(Teacher, user=request.user.pk)
     books = Book.objects.filter(teacher=teacher).order_by('-published_date')
     context = {
         'books': books
@@ -88,7 +88,7 @@ def publish_book(request):
         price = request.POST.get('price')
         cover_image = request.FILES.get('cover_image')
         # Use get_object_or_404 with the user
-        teacher = get_object_or_404(Teacher, user=request.user)
+        teacher = get_object_or_404(Teacher, user=request.user.pk)
 
         Book.objects.create(
             title=title,
@@ -106,7 +106,7 @@ def video_page(request):
     Render the video upload and library page.
     """
     # Use get_object_or_404 with the user
-    teacher = get_object_or_404(Teacher, user=request.user)
+    teacher = get_object_or_404(Teacher, user=request.user.pk)
     videos = Video.objects.filter(teacher=teacher).order_by('-created_at')
     context = {
         'videos': videos
@@ -128,7 +128,7 @@ def add_video(request):
         youtube_id = youtube_id_match.group(1) if youtube_id_match else None
 
         # Use get_object_or_404 with the user
-        teacher = get_object_or_404(Teacher, user=request.user)
+        teacher = get_object_or_404(Teacher, user=request.user.pk)
         
         if youtube_id:
             Video.objects.create(
