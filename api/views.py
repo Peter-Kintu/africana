@@ -1,14 +1,22 @@
 from rest_framework import viewsets
 from rest_framework import permissions
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher, Book, Video
 from .serializers import StudentSerializer, LessonSerializer, QuestionSerializer, QuizAttemptSerializer, StudentProgressSerializer
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.decorators import api_view
-from django.shortcuts import get_object_or_404
 import re  # Import the regular expression module
+
+# Helper function to get or create a Teacher instance
+def get_teacher_for_user(user):
+    """
+    Retrieves the Teacher instance for a given user.
+    If no Teacher instance exists, it creates a new one and returns it.
+    """
+    teacher, created = Teacher.objects.get_or_create(user=user)
+    return teacher
 
 # Placeholder for a viewset to handle user authentication, as imported in urls.py
 class AuthViewSet(viewsets.ViewSet):
@@ -69,8 +77,8 @@ def teacher_books(request):
     """
     Render the teacher's book publishing page.
     """
-    # Use get_object_or_404 to handle cases where no Teacher object is found for the user
-    teacher = get_object_or_404(Teacher, user=request.user.pk)
+    # Use the new helper function
+    teacher = get_teacher_for_user(request.user)
     books = Book.objects.filter(teacher=teacher).order_by('-published_date')
     context = {
         'books': books
@@ -87,8 +95,8 @@ def publish_book(request):
         description = request.POST.get('description')
         price = request.POST.get('price')
         cover_image = request.FILES.get('cover_image')
-        # Use get_object_or_404 with the user
-        teacher = get_object_or_404(Teacher, user=request.user.pk)
+        # Use the new helper function
+        teacher = get_teacher_for_user(request.user)
 
         Book.objects.create(
             title=title,
@@ -105,8 +113,8 @@ def video_page(request):
     """
     Render the video upload and library page.
     """
-    # Use get_object_or_404 with the user
-    teacher = get_object_or_404(Teacher, user=request.user.pk)
+    # Use the new helper function
+    teacher = get_teacher_for_user(request.user)
     videos = Video.objects.filter(teacher=teacher).order_by('-created_at')
     context = {
         'videos': videos
@@ -127,8 +135,8 @@ def add_video(request):
         youtube_id_match = re.search(r'(?:youtube\.com/watch\?v=|youtu\.be/)([^&]+)', url)
         youtube_id = youtube_id_match.group(1) if youtube_id_match else None
 
-        # Use get_object_or_404 with the user
-        teacher = get_object_or_404(Teacher, user=request.user.pk)
+        # Use the new helper function
+        teacher = get_teacher_for_user(request.user)
         
         if youtube_id:
             Video.objects.create(
