@@ -7,6 +7,8 @@ import django.contrib.auth.models
 import django.contrib.auth.validators
 import django.core.validators
 import django.db.models.deletion
+from django.contrib.auth.hashers import make_password
+
 
 
 class Migration(migrations.Migration):
@@ -165,4 +167,44 @@ class Migration(migrations.Migration):
                 ('lessons_completed', models.ManyToManyField(blank=True, related_name='completed_by_students', to='api.lesson')),
             ],
         ),
+    ]
+def seed_initial_users(apps, schema_editor):
+    User = apps.get_model('api', 'User')
+    Teacher = apps.get_model('api', 'Teacher')
+
+    # Create superuser
+    if not User.objects.filter(username='PETER').exists():
+        admin_user = User.objects.create(
+            username='PETER',
+            email='kintupeter7@gmail.com',
+            password=make_password('PETERPETER'),
+            is_superuser=True,
+            is_staff=True,
+            is_active=True,
+        )
+        print("✅ Superuser 'PETER' created.")
+
+    # Create sample teacher
+    if not User.objects.filter(username='teacher1').exists():
+        teacher_user = User.objects.create(
+            username='teacher1',
+            email='teacher1@example.com',
+            password=make_password('teach123'),
+            is_staff=True,
+            is_active=True,
+        )
+        Teacher.objects.create(
+            user=teacher_user,
+            subject='Mathematics',
+            institution='Kampala High School',
+        )
+        print("✅ Sample teacher 'teacher1' created.")
+
+class Migration(migrations.Migration):
+
+    # ... your existing migration content ...
+
+    operations = [
+        # ... all your model creations ...
+        migrations.RunPython(seed_initial_users),
     ]
