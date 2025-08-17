@@ -1,8 +1,6 @@
-# learnflow_ai/django_backend/api/forms.py
-
 from django import forms
 import json
-from .models import Question
+from .models import Question, Teacher, User
 
 class QuestionAdminForm(forms.ModelForm):
     # Define individual CharFields for each MCQ option
@@ -38,3 +36,13 @@ class QuestionAdminForm(forms.ModelForm):
         # Re-assign the cleaned options to the 'options' field of the model instance
         self.instance.options = json.dumps(cleaned_options)
         return cleaned_data
+
+class TeacherAdminForm(forms.ModelForm):
+    class Meta:
+        model = Teacher
+        fields = '__all__'
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Explicitly set the queryset for the 'user' field
+        self.fields['user'].queryset = User.objects.all()

@@ -5,9 +5,8 @@ import csv
 from django.http import HttpResponse
 
 from .models import Student, Lesson, Question, QuizAttempt, StudentProgress, Teacher, Book, Video
-
-# You may need to create a forms.py file with QuestionAdminForm if it doesn't exist.
-from .forms import QuestionAdminForm
+# Import both QuestionAdminForm and TeacherAdminForm
+from .forms import QuestionAdminForm, TeacherAdminForm 
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -18,10 +17,10 @@ class StudentAdmin(admin.ModelAdmin):
 
 @admin.register(Teacher)
 class TeacherAdmin(admin.ModelAdmin):
+    form = TeacherAdminForm  # Use the custom form
     list_display = ('user', 'subject', 'institution', 'created_at', 'updated_at')
     search_fields = ('user__username', 'subject', 'institution')
     list_filter = ('subject', 'institution')
-
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):
