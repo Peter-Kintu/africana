@@ -25,11 +25,6 @@ class TeacherAdmin(admin.ModelAdmin):
     list_filter = ('subject', 'institution')
     raw_id_fields = ('user',)
 
-@admin.register(Wallet)
-class WalletAdmin(admin.ModelAdmin):
-    list_display = ('user', 'balance')
-    search_fields = ('user__username',)
-    raw_id_fields = ('user',)
 
 @admin.register(Lesson)
 class LessonAdmin(admin.ModelAdmin):

@@ -63,13 +63,7 @@ class Teacher(models.Model):
     def __str__(self):
         return self.user.username
 
-# Wallet Model (assuming this is part of your system)
-class Wallet(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
-    balance = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
-    def __str__(self):
-        return f"{self.user.username}'s Wallet"
 
 # Lesson Model
 class Lesson(models.Model):
